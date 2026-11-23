@@ -1,0 +1,33 @@
+<view class="page" wx:if="{{user}}">
+  <view class="card">
+    <view class="card-title">🦷 {{user.display_name}}</view>
+    <view class="muted">登录名 {{user.login_name}} · 岗位：{{roleNames}}</view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">我的功能</view>
+    <view class="list-item" bindtap="go" data-url="/pages/patients/patients" wx:if="{{user.roles.length > 0}}">
+      <view class="li-main"><view class="li-title">👥 患者管理</view><view class="li-sub">跨店统一档案 · 逐项过敏</view></view>
+    </view>
+    <view class="list-item" bindtap="go" data-url="/pages/book/book" wx:if="{{user.roles.length > 0}}">
+      <view class="li-main"><view class="li-title">📞 预约工作台</view><view class="li-sub">电话预约 · 资质筛选 · 冲突检查</view></view>
+    </view>
+    <view class="list-item" bindtap="go" data-url="/pages/costs/costs" wx:if="{{user.roles.length > 0}}">
+      <view class="li-main"><view class="li-title">💰 费用登记</view><view class="li-sub">耗材关联治疗 · 运营费分摊</view></view>
+    </view>
+    <view class="list-item" bindtap="go" data-url="/pages/quarter/quarter" wx:if="{{user.roles.length > 0}}">
+      <view class="li-main"><view class="li-title">📊 季度核算</view><view class="li-sub">净利润 · 10% 激励基金</view></view>
+    </view>
+    <view class="list-item" bindtap="go" data-url="/pages/report/report" wx:if="{{user.roles.length > 0}}">
+      <view class="li-main"><view class="li-title">📈 运营报表</view><view class="li-sub">取消率 · 标准化检查</view></view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">演示账号</view>
+    <view class="hint">reception01 前台 · dentist01/02 牙医 · finance01 财务 · ops01 运营经理 · hq01 总部经理（密码 123456）。
+      后端需在电脑上运行：backend 目录执行 py -3.13 app.py</view>
+  </view>
+
+  <button class="btn btn-danger btn-block" bindtap="logout">退出登录</button>
+</view>

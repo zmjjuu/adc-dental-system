@@ -1,0 +1,75 @@
+<view class="page" wx:if="{{!detail}}">
+  <view class="card" wx:if="{{canFinance}}">
+    <view class="card-title">生成季度核算</view>
+    <view class="btn-row">
+      <picker mode="selector" range="{{['2025','2026']}}" value="1" bindchange="onYear">
+        <view class="picker" style="min-width:160rpx">{{year}}</view>
+      </picker>
+      <picker mode="selector" range="{{['Q1','Q2','Q3','Q4']}}" bindchange="onQno">
+        <view class="picker" style="min-width:160rpx">{{'Q' + qno}}</view>
+      </picker>
+      <button class="btn btn-primary" bindtap="create">生成核算</button>
+    </view>
+    <view class="hint" style="margin-top:12rpx">收入按已签发结算、费用按已确认分摊归集；净利润 = 收入 − 耗材 − 运营费；正利润的 10% 为激励基金（不自动算个人奖金）。</view>
+  </view>
+
+  <view class="card">
+    <block wx:if="{{list.length}}">
+      <view class="list-item" wx:for="{{list}}" wx:key="quarter_close_id" bindtap="open" data-id="{{item.quarter_close_id}}">
+        <view class="li-main">
+          <view class="li-title">{{item.year}} Q{{item.quarter_no}} v{{item.version_no}}</view>
+          <view class="li-sub">净利润 {{item.net}} · 基金 {{item.pool}}<block wx:if="{{item.pending_count}}"> · 待确认 {{item.pending_count}} 笔</block></view>
+        </view>
+        <view style="text-align:right">
+          <view class="badge {{item.st_cls}}">{{item.status}}</view>
+        </view>
+      </view>
+    </block>
+    <view wx:else class="empty">{{loaded ? '暂无核算版本' : '加载中…'}}</view>
+  </view>
+</view>
+
+<!-- 核算详情 -->
+<view class="page" wx:if="{{detail}}">
+  <view class="card">
+    <view class="card-title">{{detail.year}} Q{{detail.quarter_no}} v{{detail.version_no}} <text class="badge {{detail.st_cls}}">{{detail.status}}</text></view>
+    <view class="kv">
+      <view class="kv-row"><view class="kv-k">统计截止</view><view class="kv-v">{{detail.cutoff_at}}</view></view>
+      <view class="kv-row"><view class="kv-k">公司净利润</view><view class="kv-v"><b style="color:#dc2626;font-size:36rpx">{{detail.net}}</b></view></view>
+      <view class="kv-row"><view class="kv-k">激励基金</view><view class="kv-v">{{detail.pool}}（净利润 × 10%，个人分配需总部另行批准）</view></view>
+      <view class="kv-row" wx:if="{{detail.approved_at}}"><view class="kv-k">批准时间</view><view class="kv-v">{{detail.approved_at}}</view></view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">👨‍⚕️ 牙医贡献（可下钻）</view>
+    <view class="tbl-wrap"><table class="tbl">
+      <tr><th>牙医</th><th>收入</th><th>耗材</th><th>运营费</th><th>净利润</th><th>来源</th></tr>
+      <tr wx:for="{{detail.results}}" wx:key="dentist_id">
+        <td>{{item.dentist_name}}<view class="muted">{{item.dentist_no}}</view></td>
+        <td class="num">{{item.revenue}}</td>
+        <td class="num">{{item.material}}</td>
+        <td class="num">{{item.op}}</td>
+        <td class="num"><b>{{item.net}}</b></td>
+        <td class="num">{{item.sources}}</td>
+      </tr>
+    </table></view>
+  </view>
+
+  <view class="card" wx:if="{{detail.pending.length}}">
+    <view class="card-title">⚠️ 待确认费用（不把空值当 0，不能发布可分配结果）</view>
+    <view class="list-item" wx:for="{{detail.pending}}" wx:key="cost_entry_id">
+      <view class="li-main mono">{{item.document_no}}#{{item.line_no}} · {{item.cost_kind}}</view>
+      <view style="text-align:right">
+        <view style="font-weight:600">{{item.amt}}</view>
+        <view class="badge {{item.st_cls}}">{{item.status}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="btn-row">
+    <button class="btn btn-ghost" style="flex:1" bindtap="closeDetail">返回</button>
+    <button class="btn btn-primary" style="flex:1" wx:if="{{canFinance && detail.status === '草稿'}}" bindtap="submit">提交审批</button>
+    <button class="btn btn-primary" style="flex:1" wx:if="{{canHq && detail.status === '待审批'}}" bindtap="approve">批准核算</button>
+  </view>
+</view>

@@ -1,0 +1,111 @@
+/* ADC 全局样式 — 牙科青绿主题 */
+page {
+  background: #f1f5f9;
+  color: #0f172a;
+  font-size: 28rpx;
+  font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+.page { padding: 24rpx; }
+.card { background: #fff; border-radius: 20rpx; box-shadow: 0 2rpx 8rpx rgba(15,23,42,.06);
+  padding: 26rpx; margin-bottom: 22rpx; }
+.card-title { font-size: 30rpx; font-weight: 600; color: #134e4a; margin-bottom: 18rpx;
+  display: flex; align-items: center; }
+.hint { color: #64748b; font-size: 24rpx; line-height: 1.7; }
+.muted { color: #64748b; font-size: 22rpx; }
+.mono { font-family: Consolas, monospace; font-size: 24rpx; }
+.empty { color: #94a3b8; text-align: center; padding: 60rpx 0; font-size: 26rpx; }
+.section { font-size: 26rpx; font-weight: 600; color: #134e4a; margin: 30rpx 0 14rpx; }
+
+/* 按钮 */
+.btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 14rpx;
+  padding: 16rpx 28rpx; font-size: 26rpx; background: #fff; color: #0f172a;
+  border: 2rpx solid #e2e8f0; }
+.btn::after { border: 0; }
+.btn-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+.btn-blue { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+.btn-danger { background: #fff; color: #dc2626; border-color: #fecaca; }
+.btn-ghost { background: #fff; color: #64748b; border-color: #e2e8f0; }
+.btn-block { width: 100%; }
+.btn-sm { padding: 8rpx 20rpx; font-size: 24rpx; border-radius: 10rpx; }
+.btn-row { display: flex; gap: 14rpx; flex-wrap: wrap; align-items: center; }
+.btn[disabled] { opacity: .5; }
+
+/* 徽章 */
+.badge { display: inline-block; padding: 4rpx 18rpx; border-radius: 999rpx; font-size: 22rpx; }
+.b-blue { background: #dbeafe; color: #1d4ed8; }
+.b-green { background: #dcfce7; color: #15803d; }
+.b-teal { background: #ccfbf1; color: #0f766e; }
+.b-orange { background: #ffedd5; color: #c2410c; }
+.b-gray { background: #f1f5f9; color: #475569; }
+.b-purple { background: #f3e8ff; color: #7c3aed; }
+.b-red { background: #fee2e2; color: #b91c1c; }
+.b-yellow { background: #fef9c3; color: #a16207; }
+
+/* 表单 */
+.label { display: block; font-size: 24rpx; color: #64748b; margin: 16rpx 0 6rpx; }
+.input { width: 100%; padding: 16rpx 20rpx; border: 2rpx solid #e2e8f0; border-radius: 14rpx;
+  background: #fff; font-size: 28rpx; box-sizing: border-box; }
+.picker { width: 100%; padding: 16rpx 20rpx; border: 2rpx solid #e2e8f0; border-radius: 14rpx;
+  background: #fff; font-size: 28rpx; box-sizing: border-box; color: #0f172a; }
+textarea.input { height: 140rpx; }
+
+/* 列表 */
+.list-item { display: flex; align-items: center; gap: 16rpx; padding: 20rpx 6rpx;
+  border-bottom: 2rpx solid #f1f5f9; }
+.list-item:last-child { border-bottom: 0; }
+.li-main { flex: 1; min-width: 0; }
+.li-title { font-size: 28rpx; font-weight: 500; }
+.li-sub { color: #64748b; font-size: 22rpx; margin-top: 4rpx; }
+
+/* 键值 */
+.kv { font-size: 26rpx; }
+.kv-row { display: flex; gap: 18rpx; padding: 8rpx 0; }
+.kv-k { color: #64748b; min-width: 170rpx; }
+.kv-v { flex: 1; font-weight: 500; word-break: break-all; }
+
+/* 表格 */
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th { text-align: left; color: #64748b; font-size: 22rpx; font-weight: 600;
+  padding: 10rpx 8rpx; border-bottom: 2rpx solid #e2e8f0; white-space: nowrap; }
+.tbl td { padding: 12rpx 8rpx; border-bottom: 2rpx solid #f1f5f9; font-size: 24rpx; }
+.tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* 状态页签 */
+.tabs { display: flex; gap: 10rpx; overflow-x: auto; padding-bottom: 16rpx; white-space: nowrap; }
+.tab { flex-shrink: 0; border: 2rpx solid #e2e8f0; background: #fff; color: #64748b;
+  border-radius: 999rpx; padding: 8rpx 26rpx; font-size: 24rpx; }
+.tab.active { background: #0d9488; border-color: #0d9488; color: #fff; }
+
+/* 统计卡片 */
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16rpx; margin-bottom: 22rpx; }
+.stat { background: #fff; border-radius: 20rpx; padding: 22rpx 18rpx; box-shadow: 0 2rpx 8rpx rgba(15,23,42,.06); }
+.stat b { font-size: 44rpx; color: #0f766e; display: block; }
+.stat span { color: #64748b; font-size: 22rpx; }
+.stat.warn b { color: #d97706; }
+.stat.danger b { color: #dc2626; }
+
+/* 时段选择 */
+.slot-group { margin-bottom: 18rpx; }
+.slot-name { font-size: 26rpx; font-weight: 600; color: #134e4a; margin-bottom: 10rpx; }
+.slot-btns { display: flex; flex-wrap: wrap; gap: 12rpx; }
+.slot-btn { border: 2rpx solid #e2e8f0; background: #fff; border-radius: 12rpx;
+  padding: 10rpx 20rpx; font-size: 24rpx; }
+.slot-btn.sel { background: #0d9488; border-color: #0d9488; color: #fff; }
+
+/* 弹层（自绘底部面板） */
+.mask { position: fixed; inset: 0; background: rgba(15,23,42,.5); z-index: 60; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; z-index: 61;
+  border-radius: 28rpx 28rpx 0 0; padding: 30rpx 30rpx 60rpx; max-height: 78vh; overflow-y: auto; }
+.sheet-title { font-size: 30rpx; font-weight: 600; color: #134e4a; margin-bottom: 20rpx;
+  display: flex; justify-content: space-between; }
+
+/* 其他 */
+.footer-fixed { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; padding: 20rpx 24rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom)); box-shadow: 0 -4rpx 16rpx rgba(15,23,42,.08); z-index: 40; }
+.total-line { text-align: right; font-size: 28rpx; margin-top: 16rpx; }
+.total-line b { color: #dc2626; font-size: 40rpx; }
+.allergy-item { display: flex; align-items: center; gap: 12rpx; padding: 14rpx 0;
+  border-bottom: 2rpx dashed #e2e8f0; font-size: 26rpx; }
+.qual-tag { background: #f0fdfa; color: #0f766e; border: 2rpx solid #ccfbf1; font-size: 22rpx;
+  padding: 2rpx 14rpx; border-radius: 999rpx; display: inline-block; margin: 4rpx 6rpx 4rpx 0; }
+.sel-card { border: 2rpx solid #0d9488; background: #f0fdfa; }

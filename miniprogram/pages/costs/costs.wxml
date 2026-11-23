@@ -1,0 +1,60 @@
+<view class="page">
+  <scroll-view scroll-x class="tabs">
+    <view class="tab {{tab === item[0] ? 'active' : ''}}" wx:for="{{[['','全部'],['待分摊','待分摊'],['待确认','待确认'],['已确认','已确认']]}}"
+      wx:key="*this" data-v="{{item[0]}}" bindtap="onTab">{{item[1]}}</view>
+  </scroll-view>
+
+  <view class="btn-row" style="margin-bottom:16rpx">
+    <button class="btn btn-primary" bindtap="openForm">＋ 登记费用</button>
+  </view>
+
+  <!-- 新增表单 -->
+  <view class="card" wx:if="{{showForm}}">
+    <view class="card-title">登记成本 / 运营费用</view>
+    <view class="label">类别</view>
+    <picker mode="selector" range="{{['耗材（须关联实际治疗）','运营费（关联牙医与期间）']}}" bindchange="onKind">
+      <view class="picker">{{kind === '耗材' ? '耗材（须关联实际治疗）' : '运营费（关联牙医与期间）'}}</view>
+    </picker>
+    <view class="label">凭证号</view><input class="input" data-k="doc" bindinput="onField" value="{{doc}}" placeholder="如 MAT-202612-01" />
+    <view class="label">行号</view><input class="input" type="number" data-k="line" bindinput="onField" value="{{line}}" />
+    <view class="label">发生日期</view>
+    <picker mode="date" value="{{date}}" data-k="date" bindchange="onField"><view class="picker">{{date}}</view></picker>
+    <view class="label">金额</view><input class="input" type="digit" data-k="amount" bindinput="onField" value="{{amount}}" />
+
+    <view class="section">分摊明细（合计必须等于来源金额）</view>
+    <view class="card" style="background:#f8fafc" wx:for="{{allocs}}" wx:for-index="i">
+      <view class="label">牙医</view>
+      <picker mode="selector" range="{{dentistNames}}" data-i="{{i}}" bindchange="onAllocDentist">
+        <view class="picker">{{dentistNames[item.dentistIdx]}}</view>
+      </picker>
+      <view class="label" wx:if="{{kind === '耗材'}}">关联实际治疗（追溯到治疗版本）</view>
+      <picker wx:if="{{kind === '耗材'}}" mode="selector" range="{{item.treatmentOptions}}" data-i="{{i}}" bindchange="onAllocTt">
+        <view class="picker">{{item.treatmentOptions[item.treatmentIdx] || '选择实际治疗…'}}</view>
+      </picker>
+      <view class="label">分配金额</view>
+      <input class="input" type="digit" data-i="{{i}}" bindinput="onAllocAmount" value="{{item.amount}}" />
+      <view class="btn btn-sm btn-danger" style="margin-top:14rpx" data-i="{{i}}" bindtap="delAlloc">删除此行</view>
+    </view>
+    <button class="btn btn-ghost btn-block" bindtap="addAlloc">＋ 加一行分摊</button>
+    <button class="btn btn-primary btn-block" style="margin-top:20rpx" loading="{{saving}}" bindtap="save">保存费用（待确认）</button>
+    <view class="hint" style="margin-top:14rpx">确认时校验分配合计=来源金额、同一凭证行防重、耗材追溯到实际治疗；无规则先挂「待分摊」。</view>
+  </view>
+
+  <view class="card">
+    <block wx:if="{{list.length}}">
+      <view class="list-item" wx:for="{{list}}" wx:key="cost_entry_id">
+        <view class="li-main">
+          <view class="li-title mono">{{item.document_no}}#{{item.line_no}} · {{item.cost_kind}}</view>
+          <view class="li-sub">{{item.day}} · 分摊：{{item.allocText}}</view>
+        </view>
+        <view style="text-align:right">
+          <view style="font-weight:600">{{item.amt}}</view>
+          <view class="badge {{item.st_cls}}">{{item.status}}</view>
+          <view class="btn btn-sm btn-primary" wx:if="{{item.status !== '已确认'}}" style="margin-top:10rpx"
+            data-id="{{item.cost_entry_id}}" bindtap="confirm">确认</view>
+        </view>
+      </view>
+    </block>
+    <view wx:else class="empty">{{loaded ? '暂无费用记录' : '加载中…'}}</view>
+  </view>
+</view>

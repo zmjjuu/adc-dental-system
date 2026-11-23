@@ -1,0 +1,15 @@
+<view class="login-wrap">
+  <view class="login-card">
+    <view class="login-logo">🦷</view>
+    <view class="login-title">安德鲁牙科连锁管理系统</view>
+    <view class="login-sub">Andrew's Dental Chain · 跨店预约 / 治疗 / 结算 / 季度核算</view>
+    <view class="label">演示账号（密码均为 123456）</view>
+    <picker mode="selector" range="{{accounts}}" value="{{index}}" bindchange="onPick">
+      <view class="picker">{{accounts[index]}}</view>
+    </picker>
+    <view class="label">密码</view>
+    <input class="input" password value="{{password}}" bindinput="onPwd" placeholder="演示密码 123456" />
+    <button class="btn btn-primary btn-block login-btn" loading="{{loading}}" bindtap="onLogin">登 录</button>
+    <view class="login-tip">需先在电脑上启动后端：backend 目录执行 py -3.13 app.py</view>
+  </view>
+</view>

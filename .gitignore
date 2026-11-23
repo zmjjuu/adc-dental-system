@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+
+# 数据库（演示数据在首次启动时自动生成，无需提交）
+backend/adc.db
+
+# 微信开发者工具个人配置（本地生成）
+miniprogram/project.private.config.json
+
+# 系统文件
+Thumbs.db
+.DS_Store

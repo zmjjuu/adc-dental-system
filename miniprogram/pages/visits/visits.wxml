@@ -1,0 +1,19 @@
+<view class="page">
+  <scroll-view scroll-x class="tabs">
+    <view class="tab {{tab === item[0] ? 'active' : ''}}" wx:for="{{tabs}}" wx:key="*this"
+      data-v="{{item[0]}}" bindtap="onTab">{{item[1]}}</view>
+  </scroll-view>
+
+  <view class="card">
+    <block wx:if="{{list.length}}">
+      <view class="list-item" wx:for="{{list}}" wx:key="visit_id" bindtap="goVisit" data-id="{{item.visit_id}}">
+        <view class="li-main">
+          <view class="li-title">{{item.patient_name}} · {{item.clinic_code}} · {{item.dentist_name}}</view>
+          <view class="li-sub mono">{{item.visit_no}} · {{item.when}}<block wx:if="{{item.requested_treatments}}"> · {{item.requested_treatments}}</block></view>
+        </view>
+        <view class="badge {{item.st_cls}}">{{item.status}}</view>
+      </view>
+    </block>
+    <view wx:else class="empty">{{loaded ? '该状态下没有预约' : '加载中…'}}</view>
+  </view>
+</view>

@@ -1,0 +1,133 @@
+<view class="page" wx:if="{{meta}}">
+  <scroll-view scroll-x class="tabs">
+    <view class="tab {{tab === 'dentists' ? 'active' : ''}}" data-v="dentists" bindtap="onTab">👨‍⚕️ 牙医资质</view>
+    <view class="tab {{tab === 'clinics' ? 'active' : ''}}" data-v="clinics" bindtap="onTab">🏥 诊所</view>
+    <view class="tab {{tab === 'schedules' ? 'active' : ''}}" data-v="schedules" bindtap="onTab">🗓 出诊</view>
+    <view class="tab {{tab === 'catalog' ? 'active' : ''}}" data-v="catalog" bindtap="onTab">📚 项目目录</view>
+  </scroll-view>
+
+  <!-- 牙医 -->
+  <block wx:if="{{tab === 'dentists'}}">
+    <view class="card">
+      <view class="card-title">新增牙医</view>
+      <view class="label">员工编号</view><input class="input" data-k="employee_no" bindinput="onDf" value="{{df.employee_no}}" placeholder="如 D-3016" />
+      <view class="label">姓名</view><input class="input" data-k="name" bindinput="onDf" value="{{df.name}}" />
+      <view class="label">出生日期</view>
+      <picker mode="date" data-k="birth_date" bindchange="onDf"><view class="picker">{{df.birth_date || '请选择'}}</view></picker>
+      <view class="label">电话 / 邮箱</view>
+      <input class="input" data-k="phone" bindinput="onDf" value="{{df.phone}}" />
+      <input class="input" style="margin-top:10rpx" data-k="email" bindinput="onDf" value="{{df.email}}" />
+      <view class="label">家庭住址</view><input class="input" data-k="home_address" bindinput="onDf" value="{{df.home_address}}" />
+      <view class="label">持有资质（多对多）</view>
+      <view wx:for="{{meta.qualifications}}" wx:key="qualification_id" style="display:flex;align-items:center;gap:12rpx;padding:8rpx 0">
+        <checkbox-group bindchange="onDQual" data-id="{{item.qualification_id}}">
+          <checkbox value="{{item.qualification_id}}" style="transform:scale(.8)" />
+        </checkbox-group>
+        <view>{{item.qualification_name}}</view>
+      </view>
+      <button class="btn btn-primary btn-block" style="margin-top:14rpx" bindtap="createDentist">保存牙医</button>
+    </view>
+    <view class="card">
+      <view class="card-title">牙医列表</view>
+      <view class="list-item" wx:for="{{meta.dentists}}" wx:key="dentist_id">
+        <view class="li-main">
+          <view class="li-title mono">{{item.employee_no}} {{item.name}}
+            <text class="badge {{item.active ? 'b-green' : 'b-gray'}}">{{item.active ? '在职' : '停用'}}</text></view>
+          <view class="li-sub">{{item.phone}} · {{item.email}}</view>
+          <view class="li-sub">
+            <text class="qual-tag" wx:for="{{item.qualifications}}" wx:for-item="q" wx:key="dentist_qualification_id"
+              data-id="{{item.dentist_id}}" data-qid="{{q.qualification_id}}" bindtap="openQualFor">{{q.qualification_name}} · {{q.verification_status}}</text>
+          </view>
+        </view>
+        <view class="btn btn-sm {{item.active ? 'btn-danger' : 'btn-primary'}}" data-id="{{item.dentist_id}}"
+          data-active="{{item.active}}" bindtap="toggleDentist">{{item.active ? '停用' : '恢复'}}</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 诊所 -->
+  <block wx:if="{{tab === 'clinics'}}">
+    <view class="card">
+      <view class="card-title">新增诊所</view>
+      <view class="label">门店代码</view><input class="input" data-k="clinic_code" bindinput="onCf" value="{{cf.clinic_code}}" placeholder="如 C-C03" />
+      <view class="label">邮政地址</view><input class="input" data-k="postal_address" bindinput="onCf" value="{{cf.postal_address}}" />
+      <view class="label">主管姓名</view><input class="input" data-k="manager_name" bindinput="onCf" value="{{cf.manager_name}}" />
+      <view class="label">电话 / 邮箱</view>
+      <input class="input" data-k="phone" bindinput="onCf" value="{{cf.phone}}" />
+      <input class="input" style="margin-top:10rpx" data-k="email" bindinput="onCf" value="{{cf.email}}" />
+      <view class="label">办公面积 m²</view><input class="input" type="digit" data-k="area_m2" bindinput="onCf" value="{{cf.area_m2}}" />
+      <button class="btn btn-primary btn-block" style="margin-top:14rpx" bindtap="createClinic">保存诊所</button>
+    </view>
+    <view class="card">
+      <view class="card-title">诊所列表</view>
+      <view class="list-item" wx:for="{{meta.clinics}}" wx:key="clinic_id">
+        <view class="li-main">
+          <view class="li-title mono">{{item.clinic_code}} · {{item.manager_name}}</view>
+          <view class="li-sub">{{item.postal_address}} · {{item.phone}} · {{item.area_m2}} m²</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 出诊 -->
+  <block wx:if="{{tab === 'schedules'}}">
+    <view class="card">
+      <view class="card-title">新增出诊安排（跨店重叠会被拒绝）</view>
+      <view class="label">牙医</view>
+      <picker mode="selector" range="{{meta.dentists}}" range-key="name" data-k="dentistIdx" bindchange="onSf">
+        <view class="picker">{{meta.dentists[sf.dentistIdx].employee_no}} {{meta.dentists[sf.dentistIdx].name}}</view>
+      </picker>
+      <view class="label">诊所</view>
+      <picker mode="selector" range="{{meta.clinics}}" range-key="clinic_code" data-k="clinicIdx" bindchange="onSf">
+        <view class="picker">{{meta.clinics[sf.clinicIdx].clinic_code}}</view>
+      </picker>
+      <view class="label">开始时间（格式 2026-11-23 09:00）</view>
+      <input class="input" data-k="start" bindinput="onSf" value="{{sf.start}}" />
+      <view class="label">结束时间</view>
+      <input class="input" data-k="end" bindinput="onSf" value="{{sf.end}}" />
+      <button class="btn btn-primary btn-block" style="margin-top:14rpx" bindtap="createSchedule">保存出诊</button>
+    </view>
+    <view class="card">
+      <view class="card-title">出诊安排</view>
+      <view class="list-item" wx:for="{{schedules}}" wx:key="schedule_id">
+        <view class="li-main">
+          <view class="li-title">{{item.dentist_name}} → {{item.clinic_code}}</view>
+          <view class="li-sub">{{item.start_at}} ~ {{item.end_at}} · {{item.status}}</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 项目目录 -->
+  <block wx:if="{{tab === 'catalog'}}">
+    <view class="card">
+      <view class="card-title">新增治疗项目</view>
+      <view class="label">项目代码 / 名称</view>
+      <input class="input" data-k="treatment_code" bindinput="onTf" value="{{tf.treatment_code}}" placeholder="如 WHITEN" />
+      <input class="input" style="margin-top:10rpx" data-k="treatment_name" bindinput="onTf" value="{{tf.treatment_name}}" placeholder="如 冷光美白" />
+      <view class="label">单位 / 标准价</view>
+      <input class="input" data-k="unit_name" bindinput="onTf" value="{{tf.unit_name}}" placeholder="次/颗" />
+      <input class="input" style="margin-top:10rpx" type="digit" data-k="default_unit_price" bindinput="onTf" value="{{tf.default_unit_price}}" />
+      <view class="label">所需资质（不选 = 全部牙医可做）</view>
+      <view wx:for="{{meta.qualifications}}" wx:key="qualification_id" style="display:flex;align-items:center;gap:12rpx;padding:8rpx 0">
+        <checkbox-group bindchange="onTQual" data-id="{{item.qualification_id}}">
+          <checkbox value="{{item.qualification_id}}" style="transform:scale(.8)" />
+        </checkbox-group>
+        <view>{{item.qualification_name}}</view>
+      </view>
+      <button class="btn btn-primary btn-block" style="margin-top:14rpx" bindtap="createType">保存项目</button>
+    </view>
+    <view class="card">
+      <view class="card-title">项目目录</view>
+      <view class="list-item" wx:for="{{meta.treatment_types}}" wx:key="treatment_type_id">
+        <view class="li-main">
+          <view class="li-title mono">{{item.treatment_code}} {{item.treatment_name}} · ¥{{item.default_unit_price}}/{{item.unit_name}}</view>
+          <view class="li-sub">
+            <text class="qual-tag" wx:for="{{item.requirement_names}}" wx:for-item="q" wx:key="*this">{{q}}</text>
+            <text wx:if="{{!item.requirement_names.length}}">无需特定资质</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

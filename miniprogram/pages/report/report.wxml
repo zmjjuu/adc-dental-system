@@ -1,0 +1,47 @@
+<view class="page">
+  <view class="card">
+    <view class="card-title">取消率与未到诊率</view>
+    <view class="btn-row" style="margin-bottom:16rpx">
+      <picker mode="selector" range="{{['2025','2026']}}" value="1" bindchange="onYear">
+        <view class="picker" style="min-width:150rpx">{{year}}</view>
+      </picker>
+      <picker mode="selector" range="{{['Q1','Q2','Q3','Q4']}}" bindchange="onQno">
+        <view class="picker" style="min-width:150rpx">{{'Q' + qno}}</view>
+      </picker>
+      <button class="btn btn-primary" bindtap="load">查询</button>
+    </view>
+
+    <block wx:if="{{rep}}">
+      <view class="hint" style="margin-bottom:16rpx">统计截止 {{rep.cutoff}}。分母 = 已到期的有效预约（排除改约原记录、诊所撤销与未来预约）；患者取消保留在分母中。</view>
+      <view class="stat-grid">
+        <view class="stat"><b>{{rep.t.denominator}}</b><span>到期预约（分母）</span></view>
+        <view class="stat warn"><b>{{rep.t.cancel_rate}}</b><span>患者取消率（{{rep.t.cancelled}} 笔）</span></view>
+        <view class="stat danger"><b>{{rep.t.noshow_rate}}</b><span>未到诊率（{{rep.t.noshow}} 笔）</span></view>
+        <view class="stat"><b>{{rep.t.arrived}}</b><span>已到诊</span></view>
+        <view class="stat"><b>{{rep.t.pending}}</b><span>待核实（单列）</span></view>
+        <view class="stat"><b>{{rep.future_excluded}}</b><span>未来预约（不入分母）</span></view>
+      </view>
+      <view class="tbl-wrap"><table class="tbl">
+        <tr><th>诊所</th><th>分母</th><th>取消率</th><th>未到诊率</th></tr>
+        <tr wx:for="{{rep.rows}}" wx:key="clinic_code">
+          <td>{{item.clinic_code}}</td><td class="num">{{item.denominator}}</td>
+          <td class="num">{{item.cancel_rate != null ? item.cancel_rate + '%' : '—'}}</td>
+          <td class="num">{{item.noshow_rate != null ? item.noshow_rate + '%' : '—'}}</td>
+        </tr>
+      </table></view>
+    </block>
+  </view>
+
+  <view class="card" wx:if="{{std}}">
+    <view class="card-title">🔍 标准化检查（记录缺项）</view>
+    <view class="stat-grid">
+      <view class="stat {{std.allergy_not_asked ? 'warn' : ''}}"><b>{{std.allergy_not_asked}}</b><span>过敏未询问患者</span></view>
+      <view class="stat {{std.allergy_pending ? 'warn' : ''}}"><b>{{std.allergy_pending}}</b><span>待核实过敏</span></view>
+      <view class="stat {{std.draft_treatments ? 'warn' : ''}}"><b>{{std.draft_treatments}}</b><span>未签署治疗</span></view>
+      <view class="stat {{std.arrived_no_invoice.length ? 'warn' : ''}}"><b>{{std.arrived_no_invoice.length}}</b><span>已到诊未开单</span></view>
+      <view class="stat {{std.pending_costs.length ? 'danger' : ''}}"><b>{{std.pending_costs.length}}</b><span>待分摊费用</span></view>
+      <view class="stat {{std.dentists_no_verified_qual.length ? 'warn' : ''}}"><b>{{std.dentists_no_verified_qual.length}}</b><span>无已核实资质牙医</span></view>
+    </view>
+    <view class="hint">标准化检查对象是项目目录与记录完整性；报表不能替代临床质量评价。</view>
+  </view>
+</view>

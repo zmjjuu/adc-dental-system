@@ -1,0 +1,37 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/index/index",
+    "pages/visits/visits",
+    "pages/visit/visit",
+    "pages/book/book",
+    "pages/patients/patients",
+    "pages/patient/patient",
+    "pages/treat/treat",
+    "pages/invoice/invoice",
+    "pages/costs/costs",
+    "pages/quarter/quarter",
+    "pages/report/report",
+    "pages/manage/manage",
+    "pages/me/me"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#0f766e",
+    "navigationBarTitleText": "安德鲁牙科 ADC",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f1f5f9"
+  },
+  "tabBar": {
+    "color": "#64748b",
+    "selectedColor": "#0f766e",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "工作台" },
+      { "pagePath": "pages/visits/visits", "text": "就诊" },
+      { "pagePath": "pages/me/me", "text": "我的" }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

@@ -1,0 +1,78 @@
+<view class="page" wx:if="{{v}}">
+  <view class="card">
+    <view class="card-title">🧾 诊前核对 · 过敏逐项复核</view>
+    <view class="kv">
+      <view class="kv-row"><view class="kv-k">患者</view><view class="kv-v">{{v.patient.name}}（{{v.patient.account_no}}）· {{v.patient.phone}}</view></view>
+      <view class="kv-row"><view class="kv-k">就诊</view><view class="kv-v mono">{{v.visit_no}} · {{v.clinic_code}} · {{v.scheduled_start}}</view></view>
+      <view class="kv-row" wx:if="{{v.special_needs}}"><view class="kv-k">特殊需求</view><view class="kv-v">{{v.special_needs}}</view></view>
+    </view>
+    <block wx:if="{{v.allergies.length}}">
+      <view class="allergy-item" wx:for="{{v.allergies}}" wx:key="patient_allergy_id">
+        <view style="min-width:120rpx;font-weight:600">{{item.allergy_name}}</view>
+        <view class="badge {{item.st_cls}}">{{item.status}}</view>
+        <view class="muted" style="flex:1">{{item.note || ''}}</view>
+        <view class="btn btn-sm btn-ghost" wx:if="{{item.status !== '已确认'}}"
+          data-pid="{{v.patient.patient_id}}" data-aid="{{item.allergy_type_id}}" bindtap="confirmAllergy">确认</view>
+      </view>
+    </block>
+    <view wx:else class="hint">无已记录过敏（{{v.patient.allergy_inquiry_status}}）</view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">🩺 实际治疗（签署确认后进入结算）</view>
+    <block wx:if="{{v.treatments.length}}">
+      <view class="tbl-wrap"><table class="tbl">
+        <tr><th>项目</th><th>数量</th><th>单价</th><th>小计</th><th>状态</th><th></th></tr>
+        <tr wx:for="{{v.treatments}}" wx:key="treatment_id">
+          <td>{{item.treatment_name}}<block wx:if="{{item.note}}"><view class="muted">{{item.note}}</view></block></td>
+          <td class="num">{{item.units}}</td>
+          <td class="num">{{item.price}}</td>
+          <td class="num">{{item.sub}}</td>
+          <td><text class="badge {{item.st_cls}}">{{item.status}}</text></td>
+          <td>
+            <view class="btn btn-sm btn-primary" wx:if="{{item.status === '草稿'}}" data-id="{{item.treatment_id}}" bindtap="confirm">签署</view>
+            <view class="btn btn-sm btn-ghost" wx:if="{{item.status === '已确认'}}" data-id="{{item.treatment_id}}" bindtap="openRevise">更正</view>
+          </td>
+        </tr>
+      </table></view>
+    </block>
+    <view wx:else class="hint">暂无治疗记录。</view>
+
+    <view class="section">➕ 记录实际治疗（新增项目单独一行）</view>
+    <view class="label">治疗项目</view>
+    <picker mode="selector" range="{{ttNames}}" value="{{ttIdx}}" bindchange="onTt">
+      <view class="picker">{{ttNames[ttIdx]}}</view>
+    </picker>
+    <view class="label">标准单位数</view>
+    <input class="input" type="digit" value="{{units}}" bindinput="onUnits" />
+    <view class="label">单位价格（默认取目录现价，历史结算用快照）</view>
+    <input class="input" type="digit" value="{{price}}" bindinput="onPrice" />
+    <view class="label">备注</view>
+    <input class="input" value="{{note}}" bindinput="onNote" />
+    <button class="btn btn-primary btn-block" style="margin-top:20rpx" bindtap="addTreatment">添加治疗行</button>
+    <view class="hint" style="margin-top:14rpx">确认后的修改进入更正流程并保留原版本，不无痕覆盖。</view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">🧮 结算单</view>
+    <block wx:if="{{v.invoice}}">
+      <view class="kv-row"><view class="kv-k">单号</view><view class="kv-v mono">{{v.invoice.invoice_no}} · v{{v.invoice.revision_no}}</view></view>
+      <view class="total-line">合计 <b>{{invoiceTotal}}</b></view>
+      <button class="btn btn-ghost btn-block" style="margin-top:12rpx" bindtap="goInvoice">查看结算明细</button>
+    </block>
+    <view wx:else class="hint">尚未开单，由前台/财务按已签署治疗生成。</view>
+  </view>
+</view>
+
+<!-- 更正弹层 -->
+<view class="mask" wx:if="{{sheet === 'revise'}}" bindtap="closeSheet"></view>
+<view class="sheet" wx:if="{{sheet === 'revise'}}">
+  <view class="sheet-title">治疗更正（保留原版本）<text bindtap="closeSheet" style="color:#94a3b8">✕</text></view>
+  <view class="label">更正后单位数（留空保持不变）</view>
+  <input class="input" type="digit" value="{{rvUnits}}" bindinput="onRvUnits" />
+  <view class="label">更正后单价（留空保持不变）</view>
+  <input class="input" type="digit" value="{{rvPrice}}" bindinput="onRvPrice" />
+  <view class="label">更正原因</view>
+  <input class="input" value="{{rvNote}}" bindinput="onRvNote" />
+  <button class="btn btn-danger btn-block" style="margin-top:24rpx" bindtap="doRevise">提交更正</button>
+</view>
