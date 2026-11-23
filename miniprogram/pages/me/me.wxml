@@ -24,9 +24,18 @@
   </view>
 
   <view class="card">
+    <view class="card-title">🧪 演示模式</view>
+    <view class="hint">当前：{{offline ? '离线演示模式（内置同规则演示引擎，无需服务器，数据在手机本地）' : '在线模式（连接电脑上的后端 127.0.0.1:8000）'}}</view>
+    <view class="btn-row" style="margin-top:16rpx">
+      <button class="btn btn-ghost" bindtap="toggleOffline">{{offline ? '切换到在线模式' : '切换到离线演示模式'}}</button>
+      <button class="btn btn-danger" wx:if="{{offline}}" bindtap="resetDemo">重置演示数据</button>
+    </view>
+  </view>
+
+  <view class="card">
     <view class="card-title">演示账号</view>
     <view class="hint">reception01 前台 · dentist01/02 牙医 · finance01 财务 · ops01 运营经理 · hq01 总部经理（密码 123456）。
-      后端需在电脑上运行：backend 目录执行 py -3.13 app.py</view>
+      在线模式需在电脑上运行后端：backend 目录执行 py -3.13 app.py</view>
   </view>
 
   <button class="btn btn-danger btn-block" bindtap="logout">退出登录</button>

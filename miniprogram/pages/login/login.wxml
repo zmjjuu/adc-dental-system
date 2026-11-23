@@ -10,6 +10,6 @@
     <view class="label">密码</view>
     <input class="input" password value="{{password}}" bindinput="onPwd" placeholder="演示密码 123456" />
     <button class="btn btn-primary btn-block login-btn" loading="{{loading}}" bindtap="onLogin">登 录</button>
-    <view class="login-tip">需先在电脑上启动后端：backend 目录执行 py -3.13 app.py</view>
+    <view class="login-tip">连接不上服务器时会自动切换为「离线演示模式」，无需后端也能完整体验（数据在手机本地，可在「我的」页重置）。</view>
   </view>
 </view>

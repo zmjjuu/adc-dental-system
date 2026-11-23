@@ -29,12 +29,13 @@
   },
   "compileType": "miniprogram",
   "libVersion": "3.6.5",
-  "appid": "wx3ea95b4e106d2798",
+  "appid": "wx3a30ef229e6b59dd",
   "projectname": "adc-miniprogram",
   "condition": {},
   "editorSetting": {
     "tabIndent": "insertSpaces",
     "tabSize": 2
   },
-  "simulatorPluginLibVersion": {}
+  "simulatorPluginLibVersion": {},
+  "isGameTourist": false
 }
