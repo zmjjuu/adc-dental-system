@@ -10,6 +10,7 @@ WORKDIR /app
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
+COPY website/ /website
 
 ENV PORT=80
 EXPOSE 80
