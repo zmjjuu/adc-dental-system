@@ -18,6 +18,7 @@
       <view class="demo-line">P-1002 刘明轩 · 新患者初诊评估</view>
       <view class="demo-line">P-1003~P-1006 · 其余演示患者</view>
     </view>
-    <view class="login-tip">连接不上服务器时自动切换「离线演示模式」，数据在手机本地</view>
+    <view class="login-tip">本系统为课程设计演示系统，诊所与患者信息均为模拟数据，不提供诊疗建议、不涉及线上支付</view>
+    <view class="login-tip" style="margin-top:8rpx">连接不上服务器时自动切换「离线演示模式」，数据在手机本地</view>
   </view>
 </view>
