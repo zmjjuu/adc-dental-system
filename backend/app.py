@@ -8,7 +8,7 @@ import functools
 import secrets
 import os
 from flask import Flask, request, jsonify, g
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 import db
 import logic
 from logic import BizError
@@ -192,6 +192,10 @@ def create_patient():
                        (pid, a['allergy_type_id'], '待核实', a.get('note')))
     g.conn.execute("UPDATE patients SET allergy_inquiry_status='已报告' WHERE patient_id=?"
                    " AND allergy_inquiry_status='未询问'", (pid,))
+    # 同步创建患者自助端账号（默认密码 123456，登录名 = 账号或手机号）
+    g.conn.execute("INSERT INTO patient_accounts (patient_id, login_name, credential_ref, active, created_at)"
+                   " VALUES (?,?,?,1,datetime('now','localtime'))",
+                   (pid, account_no, generate_password_hash('123456')))
     logic.audit(g.conn, g.user['user_id'], 'patients', pid, '建立患者档案',
                 after={'account_no': account_no, 'name': body['name']})
     g.conn.commit()
@@ -746,6 +750,241 @@ def create_treatment_type():
                 after={'treatment_name': body['treatment_name']})
     g.conn.commit()
     return jsonify({'treatment_type_id': tid})
+
+
+# ================= 患者自助端（小程序患者端；课程要求的扩展） =================
+# 患者账号独立于员工账号；患者只能操作/查看自己的数据；预约、取消、改约复用同一套业务规则
+PTOKENS = {}  # token -> patient_id
+
+
+def load_patient(conn, pid):
+    p = conn.execute("SELECT p.*, a.login_name FROM patients p"
+                     " LEFT JOIN patient_accounts a ON a.patient_id = p.patient_id"
+                     " WHERE p.patient_id=?", (pid,)).fetchone()
+    return p
+
+
+def require_patient(f):
+    @functools.wraps(f)
+    def w(*args, **kwargs):
+        token = request.headers.get('Authorization', '').replace('Bearer ', '').strip() \
+            or request.headers.get('X-Token', '').strip()
+        pid = PTOKENS.get(token)
+        conn = get_conn()
+        patient = load_patient(conn, pid) if pid else None
+        if not patient:
+            conn.close()
+            return jsonify({'error': '未登录或登录已失效，请重新登录'}), 401
+        g.conn, g.patient = conn, patient
+        try:
+            return f(*args, **kwargs)
+        finally:
+            conn.close()
+    return w
+
+
+@app.route('/api/patient/login', methods=['POST'])
+def patient_login():
+    body = request.get_json(silent=True) or {}
+    conn = get_conn()
+    login = (body.get('login_name') or '').strip()
+    acc = conn.execute("SELECT * FROM patient_accounts WHERE login_name=?", (login,)).fetchone()
+    if not acc:
+        # 允许用手机号登录
+        p = conn.execute("SELECT patient_id FROM patients WHERE phone=?", (login,)).fetchone()
+        acc = conn.execute("SELECT * FROM patient_accounts WHERE patient_id=?",
+                           (p['patient_id'],)).fetchone() if p else None
+    if not acc or not check_password_hash(acc['credential_ref'], body.get('password', '')):
+        conn.close()
+        return jsonify({'error': '账号或密码不正确'}), 401
+    if not acc['active']:
+        conn.close()
+        return jsonify({'error': '账号已停用'}), 403
+    token = secrets.token_hex(16)
+    PTOKENS[token] = acc['patient_id']
+    patient = load_patient(conn, acc['patient_id'])
+    allergies = [R(r) for r in conn.execute(
+        "SELECT a.*, t.allergy_name FROM patient_allergies a"
+        " JOIN allergy_types t ON t.allergy_type_id=a.allergy_type_id WHERE a.patient_id=?",
+        (acc['patient_id'],))]
+    conn.close()
+    return jsonify({'token': token, 'patient': dict(R(patient), allergies=allergies)})
+
+
+@app.route('/api/patient/logout', methods=['POST'])
+@require_patient
+def patient_logout():
+    token = request.headers.get('Authorization', '').replace('Bearer ', '').strip() \
+        or request.headers.get('X-Token', '').strip()
+    PTOKENS.pop(token, None)
+    return jsonify({'ok': True})
+
+
+@app.route('/api/patient/me')
+@require_patient
+def patient_me():
+    allergies = [R(r) for r in g.conn.execute(
+        "SELECT a.*, t.allergy_name FROM patient_allergies a"
+        " JOIN allergy_types t ON t.allergy_type_id=a.allergy_type_id WHERE a.patient_id=?",
+        (g.patient['patient_id'],))]
+    return jsonify(dict(R(g.patient), allergies=allergies))
+
+
+@app.route('/api/patient/me', methods=['PUT'])
+@require_patient
+def patient_update_me():
+    body = request.get_json(silent=True) or {}
+    fields = ['phone', 'email', 'billing_address', 'emergency_contact_name', 'emergency_contact_phone']
+    sets, vals = [], []
+    for f in fields:
+        if f in body:
+            sets.append(f'{f}=?')
+            vals.append(body[f] if body[f] not in ('', None) or f == 'email' else None)
+    if not sets:
+        raise BizError('没有需要更新的字段')
+    vals.append(g.patient['patient_id'])
+    g.conn.execute(f"UPDATE patients SET {', '.join(sets)} WHERE patient_id=?", vals)
+    logic.audit(g.conn, None, 'patients', g.patient['patient_id'], '患者自助更新资料',
+                after={f: body.get(f) for f in fields if f in body})
+    g.conn.commit()
+    return jsonify(R(load_patient(g.conn, g.patient['patient_id'])))
+
+
+@app.route('/api/patient/me/allergies', methods=['POST'])
+@require_patient
+def patient_report_allergy():
+    body = request.get_json(silent=True) or {}
+    t = g.conn.execute("SELECT * FROM allergy_types WHERE allergy_type_id=?",
+                       (body.get('allergy_type_id'),)).fetchone()
+    if not t:
+        raise BizError('过敏类型不存在')
+    row = g.conn.execute("SELECT * FROM patient_allergies WHERE patient_id=? AND allergy_type_id=?",
+                         (g.patient['patient_id'], body['allergy_type_id'])).fetchone()
+    if row:
+        # 已确认的过敏不被患者自报覆盖；仅更新备注
+        g.conn.execute("UPDATE patient_allergies SET note=? WHERE patient_allergy_id=?",
+                       (body.get('note', row['note']), row['patient_allergy_id']))
+        logic.audit(g.conn, None, 'patient_allergies', row['patient_allergy_id'], '患者更新过敏备注')
+    else:
+        aid = g.conn.execute("INSERT INTO patient_allergies (patient_id, allergy_type_id, status, note,"
+                             " recorded_at) VALUES (?,?, '待核实',?,datetime('now','localtime'))",
+                             (g.patient['patient_id'], body['allergy_type_id'], body.get('note'))).lastrowid
+        logic.audit(g.conn, None, 'patient_allergies', aid, '患者自报过敏（待牙医核实）',
+                    after={'allergy_type_id': body['allergy_type_id']})
+    g.conn.execute("UPDATE patients SET allergy_inquiry_status='已报告' WHERE patient_id=?",
+                   (g.patient['patient_id'],))
+    g.conn.commit()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/patient/meta')
+@require_patient
+def patient_meta():
+    c = g.conn
+    return jsonify({
+        'clinics': [R(r) for r in c.execute("SELECT clinic_id, clinic_code, postal_address, phone"
+                                            " FROM clinics WHERE active=1 ORDER BY clinic_code")],
+        'treatment_types': [R(r) for r in c.execute(
+            "SELECT treatment_type_id, treatment_code, treatment_name, unit_name, default_unit_price"
+            " FROM treatment_types WHERE active=1 ORDER BY treatment_code")],
+        'allergy_types': [R(r) for r in c.execute("SELECT * FROM allergy_types ORDER BY allergy_name")],
+    })
+
+
+@app.route('/api/patient/slots')
+@require_patient
+def patient_slots():
+    clinic_id = request.args.get('clinic_id', type=int)
+    date = request.args.get('date', '').strip()
+    tt = request.args.get('treatment_type_id', type=int)
+    if not clinic_id or not date:
+        raise BizError('请选择诊所和日期')
+    return jsonify(logic.available_slots(g.conn, clinic_id, date, tt))
+
+
+@app.route('/api/patient/visits', methods=['GET'])
+@require_patient
+def patient_visits():
+    rows = [R(r) for r in g.conn.execute(
+        "SELECT v.*, d.name AS dentist_name, d.employee_no AS dentist_no, c.clinic_code,"
+        " c.postal_address, prev.visit_no AS previous_no"
+        " FROM visits v JOIN dentists d ON d.dentist_id=v.dentist_id"
+        " JOIN clinics c ON c.clinic_id=v.clinic_id"
+        " LEFT JOIN visits prev ON prev.visit_id=v.previous_visit_id"
+        " WHERE v.patient_id=? ORDER BY v.scheduled_start DESC", (g.patient['patient_id'],))]
+    return jsonify(rows)
+
+
+@app.route('/api/patient/visits', methods=['POST'])
+@require_patient
+def patient_book():
+    body = request.get_json(silent=True) or {}
+    for f in ('clinic_id', 'dentist_id', 'scheduled_start', 'scheduled_end'):
+        if body.get(f) is None:
+            raise BizError(f'必填字段缺失：{f}')
+    vid = logic.book_visit(g.conn, g.patient['patient_id'], body['clinic_id'], body['dentist_id'],
+                           body['scheduled_start'], body['scheduled_end'],
+                           body.get('requested_treatments', ''), body.get('special_needs'),
+                           body.get('treatment_type_id'), None)
+    visit = g.conn.execute("SELECT visit_no, scheduled_start FROM visits WHERE visit_id=?",
+                           (vid,)).fetchone()
+    logic.audit(g.conn, None, 'visits', vid, '患者自助预约',
+                after={'visit_no': visit['visit_no'], 'scheduled_start': visit['scheduled_start']})
+    g.conn.commit()
+    return jsonify({'visit_id': vid, 'visit_no': visit['visit_no']})
+
+
+@app.route('/api/patient/visits/<int:vid>', methods=['GET'])
+@require_patient
+def patient_visit_detail(vid):
+    v = g.conn.execute("SELECT * FROM visits WHERE visit_id=? AND patient_id=?",
+                       (vid, g.patient['patient_id'])).fetchone()
+    if not v:
+        raise BizError('预约不存在')
+    d = g.conn.execute("SELECT name, employee_no FROM dentists WHERE dentist_id=?",
+                       (v['dentist_id'],)).fetchone()
+    c = g.conn.execute("SELECT clinic_code, postal_address, phone FROM clinics WHERE clinic_id=?",
+                       (v['clinic_id'],)).fetchone()
+    treatments = [R(r) for r in logic.get_visit_treatments(g.conn, vid)]
+    inv = logic.get_invoice(g.conn, vid)
+    invoice = dict(inv[0], items=[R(i) for i in inv[1]]) if inv else None
+    return jsonify(dict(R(v), dentist_name=d['name'], dentist_no=d['employee_no'],
+                        clinic_code=c['clinic_code'], clinic_address=c['postal_address'],
+                        treatments=treatments, invoice=invoice))
+
+
+@app.route('/api/patient/visits/<int:vid>/cancel', methods=['POST'])
+@require_patient
+def patient_cancel(vid):
+    v = g.conn.execute("SELECT 1 FROM visits WHERE visit_id=? AND patient_id=?",
+                       (vid, g.patient['patient_id'])).fetchone()
+    if not v:
+        raise BizError('预约不存在')
+    body = request.get_json(silent=True) or {}
+    logic.cancel_visit(g.conn, vid, None, '患者', body.get('reason', '患者主动取消'))
+    logic.audit(g.conn, None, 'visits', vid, '患者自助取消预约', reason=body.get('reason'))
+    g.conn.commit()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/patient/visits/<int:vid>/reschedule', methods=['POST'])
+@require_patient
+def patient_reschedule(vid):
+    v = g.conn.execute("SELECT 1 FROM visits WHERE visit_id=? AND patient_id=?",
+                       (vid, g.patient['patient_id'])).fetchone()
+    if not v:
+        raise BizError('预约不存在')
+    body = request.get_json(silent=True) or {}
+    for f in ('clinic_id', 'dentist_id', 'scheduled_start', 'scheduled_end'):
+        if body.get(f) is None:
+            raise BizError(f'必填字段缺失：{f}')
+    new_id = logic.reschedule_visit(g.conn, vid, None, body['clinic_id'], body['dentist_id'],
+                                    body['scheduled_start'], body['scheduled_end'],
+                                    body.get('reason', '患者自助改约'))
+    logic.audit(g.conn, None, 'visits', vid, '患者自助改约',
+                reason=body.get('reason'), after={'new_visit_id': new_id})
+    g.conn.commit()
+    return jsonify({'visit_id': new_id})
 
 
 # ---------------- 网站入口 ----------------

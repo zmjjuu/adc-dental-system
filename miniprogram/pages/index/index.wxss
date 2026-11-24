@@ -1,1 +1,33 @@
-/* 工作台使用全局样式 */
+.hero {
+  background: linear-gradient(135deg, #0d9488, #134e4a);
+  border-radius: 24rpx;
+  padding: 36rpx 32rpx;
+  margin-bottom: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 10rpx 30rpx rgba(13, 148, 136, 0.35);
+}
+.hero-title { color: #fff; font-size: 38rpx; font-weight: 700; }
+.hero-sub { color: #ccfbf1; font-size: 24rpx; margin-top: 8rpx; }
+.hero-btn {
+  background: #fff;
+  color: #0f766e;
+  font-size: 28rpx;
+  font-weight: 600;
+  padding: 18rpx 34rpx;
+  border-radius: 999rpx;
+  flex-shrink: 0;
+}
+.tt-grid { display: flex; flex-wrap: wrap; gap: 14rpx; }
+.tt-item {
+  width: calc(50% - 7rpx);
+  background: #f8fafc;
+  border: 2rpx solid #f1f5f9;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+.tt-name { font-size: 27rpx; font-weight: 600; color: #0f172a; }
+.tt-price { font-size: 32rpx; font-weight: 700; color: #0d9488; margin-top: 8rpx; }
+.tt-unit { font-size: 20rpx; color: #94a3b8; font-weight: 400; }

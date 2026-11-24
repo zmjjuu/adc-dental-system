@@ -29,11 +29,11 @@
 }
 .login-title {
   text-align: center;
-  font-size: 38rpx;
+  font-size: 40rpx;
   font-weight: 700;
   color: #134e4a;
   margin-top: 28rpx;
-  letter-spacing: 2rpx;
+  letter-spacing: 4rpx;
 }
 .login-sub {
   text-align: center;
@@ -42,24 +42,8 @@
   margin: 10rpx 0 44rpx;
   letter-spacing: 1rpx;
 }
-.picker-account {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 22rpx 24rpx;
-  border: 2rpx solid #ccfbf1;
-  border-radius: 16rpx;
-  background: #f0fdfa;
-}
-.acc-label { font-size: 30rpx; font-weight: 600; color: #134e4a; }
-.acc-arrow { color: #0d9488; font-size: 26rpx; }
-.acc-role {
-  font-size: 22rpx;
-  color: #64748b;
-  margin: 10rpx 4rpx 0;
-}
 .login-btn {
-  margin-top: 40rpx;
+  margin-top: 36rpx;
   height: 92rpx;
   font-size: 32rpx;
   letter-spacing: 8rpx;
@@ -67,10 +51,19 @@
   background: linear-gradient(135deg, #0d9488, #0f766e);
   border: 0;
 }
+.demo-box {
+  margin-top: 32rpx;
+  background: #f0fdfa;
+  border: 2rpx solid #ccfbf1;
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
+}
+.demo-title { font-size: 24rpx; font-weight: 600; color: #0f766e; margin-bottom: 8rpx; }
+.demo-line { font-size: 22rpx; color: #475569; line-height: 1.9; }
 .login-tip {
   color: #94a3b8;
   font-size: 22rpx;
   text-align: center;
-  margin-top: 28rpx;
+  margin-top: 24rpx;
   line-height: 1.6;
 }

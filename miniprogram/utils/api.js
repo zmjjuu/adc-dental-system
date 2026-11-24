@@ -9,14 +9,14 @@ const BASE = 'https://adc-353510-13-1540267336.sh.run.tcloudbase.com';
 const LOCAL = 'http://127.0.0.1:8000';
 const mock = require('./mock.js');
 
-let token = wx.getStorageSync('adc_token') || '';
-let user = wx.getStorageSync('adc_user') || null;
+let token = wx.getStorageSync('adc_ptoken') || '';
+let user = wx.getStorageSync('adc_puser') || null;
 let offline = wx.getStorageSync('adc_offline') === 1;
 let cloudErrShown = false;
 
 function clearAuth() {
   token = ''; user = null;
-  wx.removeStorageSync('adc_token'); wx.removeStorageSync('adc_user');
+  wx.removeStorageSync('adc_ptoken'); wx.removeStorageSync('adc_puser');
   getApp().globalData.user = null;
 }
 
@@ -128,10 +128,9 @@ module.exports = {
   getUser: () => user,
   setAuth: (t, u) => {
     token = t; user = u;
-    wx.setStorageSync('adc_token', t); wx.setStorageSync('adc_user', u);
+    wx.setStorageSync('adc_ptoken', t); wx.setStorageSync('adc_puser', u);
     getApp().globalData.user = u;
   },
-  hasRole: (...codes) => user && user.roles && codes.some(c => user.roles.some(r => r.role_code === c)),
   isOffline: () => offline,
   setOffline(v) {
     offline = v;

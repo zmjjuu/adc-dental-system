@@ -1,25 +1,22 @@
 const api = require('../../utils/api.js');
 const fmt = require('../../utils/fmt.js');
 
-const TABS = [['', '全部'], ['待到诊', '待到诊'], ['已到诊', '已到诊'], ['治疗完成', '治疗完成'],
-  ['患者取消', '患者取消'], ['未到诊', '未到诊'], ['待核实', '待核实'], ['已改约', '已改约']];
+const TABS = [['', '全部'], ['待到诊', '待到诊'], ['已到诊', '已到诊'], ['治疗完成', '已完成'],
+  ['患者取消', '已取消'], ['未到诊', '未到诊'], ['待核实', '待核实'], ['已改约', '已改约']];
 
 Page({
-  data: { tabs: TABS, tab: '待到诊', list: [], mine: false, loaded: false },
-  onLoad(q) {
-    if (q.mine === '1') { this.setData({ mine: true, tab: '已到诊' }); }
+  data: { tabs: TABS, tab: '待到诊', list: [], loaded: false },
+  onShow() {
+    if (!api.getUser()) { wx.reLaunch({ url: '/pages/login/login' }); return; }
+    this.load();
   },
-  onShow() { this.load(); },
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
   async load() {
-    if (!api.getUser()) return;
     try {
-      const q = [];
-      if (this.data.tab) q.push('status=' + encodeURIComponent(this.data.tab));
-      if (this.data.mine) q.push('dentist_id=' + api.getUser().dentist_id);
-      const list = await api.get('/visits' + (q.length ? '?' + q.join('&') : ''));
+      const list = await api.get('/patient/visits');
+      const filtered = this.data.tab ? list.filter(v => v.status === this.data.tab) : list;
       this.setData({
-        list: list.map(v => ({ ...v, st_cls: fmt.badgeCls(v.status),
+        list: filtered.map(v => ({ ...v, st_cls: fmt.badgeCls(v.status),
           when: fmt.dt(v.scheduled_start) })),
         loaded: true,
       });
@@ -27,4 +24,5 @@ Page({
   },
   onTab(e) { this.setData({ tab: e.currentTarget.dataset.v }); this.load(); },
   goVisit(e) { wx.navigateTo({ url: '/pages/visit/visit?id=' + e.currentTarget.dataset.id }); },
+  goBook() { wx.navigateTo({ url: '/pages/book/book' }); },
 });

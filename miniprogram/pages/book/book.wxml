@@ -1,58 +1,31 @@
 <view class="page">
-  <!-- ① 患者核对（改约模式固定患者） -->
-  <view class="card" wx:if="{{mode === 'book'}}">
-    <view class="card-title">① 患者身份核对</view>
-    <view class="btn-row">
-      <input class="input" style="flex:1" value="{{query}}" bindinput="onQuery"
-        placeholder="账号 / 姓名 / 电话（如 P-1001）" />
-      <button class="btn btn-primary" bindtap="doSearch">检索</button>
-    </view>
-    <block wx:if="{{searchResults.length}}">
-      <view class="list-item" wx:for="{{searchResults}}" wx:key="patient_id" bindtap="pickPatient" data-id="{{item.patient_id}}">
-        <view class="li-main">
-          <view class="li-title">{{item.name}}（{{item.account_no}}）</view>
-          <view class="li-sub">{{item.phone}} · {{item.allergy_cnt ? item.allergy_cnt + ' 项过敏' : '无过敏记录'}}</view>
-        </view>
-        <view class="btn btn-sm btn-primary">选择</view>
-      </view>
-    </block>
-    <view wx:if="{{patient}}" class="list-item sel-card" style="margin-top:14rpx;border-radius:14rpx">
-      <view class="li-main">
-        <view class="li-title">已选：{{patient.name}}（{{patient.account_no}}）</view>
-        <view class="li-sub">{{patient.phone}} · 过敏：{{patient.allergies.length ? '' : '无'}}
-          <text class="badge b-purple" wx:for="{{patient.allergies}}" wx:key="patient_allergy_id" style="margin-right:6rpx">{{item.allergy_name}}</text>
-        </view>
-      </view>
-    </view>
-  </view>
-
-  <!-- ② 预约安排 -->
   <view class="card">
-    <view class="card-title">{{mode === 'book' ? '②' : '①'}} 预约安排</view>
+    <view class="card-title">① 选择诊所与时间</view>
     <view class="label">诊所</view>
     <picker mode="selector" range="{{clinics}}" value="{{clinicIdx}}" bindchange="onClinic">
       <view class="picker">{{clinics[clinicIdx]}}</view>
     </picker>
     <view class="label">就诊日期</view>
-    <picker mode="date" value="{{date}}" bindchange="onDate">
+    <picker mode="date" start="{{today}}" value="{{date}}" bindchange="onDate">
       <view class="picker">{{date}}</view>
     </picker>
-    <view class="label">治疗项目（用于按资质筛选牙医，可不选）</view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">② 就诊需求</view>
+    <view class="label">诊疗项目（按资质筛选医生，可不选）</view>
     <picker mode="selector" range="{{tts}}" value="{{ttIdx}}" bindchange="onTt">
       <view class="picker">{{tts[ttIdx]}}</view>
     </picker>
-    <view class="label">期望治疗（只记录，不计费）</view>
+    <view class="label">需求描述（预约阶段只记录，不收费）</view>
     <input class="input" value="{{want}}" bindinput="onWant" placeholder="如：洗牙" />
-    <view class="label">本次特殊需求</view>
-    <textarea class="input" value="{{needs}}" bindinput="onNeeds" placeholder="如：换店就诊核对过敏档案" />
-    <view class="label" wx:if="{{mode === 'reschedule'}}">改约原因</view>
-    <input class="input" wx:if="{{mode === 'reschedule'}}" value="{{reason}}" bindinput="onReason" placeholder="如：患者要求改到下周" />
+    <view class="label">特殊情况说明（可选）</view>
+    <textarea class="input" value="{{needs}}" bindinput="onNeeds" placeholder="如：最近牙痛，希望医生先评估" />
   </view>
 
-  <!-- ③ 可约时段 -->
   <view class="card">
-    <view class="card-title">③ 可约时段（牙医—资质—门店—时段）</view>
-    <button class="btn btn-ghost btn-block" bindtap="loadSlots">查询可约时段</button>
+    <view class="card-title">③ 选择就诊时段</view>
+    <button class="btn btn-primary btn-block" bindtap="loadSlots">查询可约时段</button>
     <block wx:if="{{slotGroups.length}}">
       <view class="slot-group" wx:for="{{slotGroups}}" wx:key="name" wx:for-index="g">
         <view class="slot-name">{{item.name}}</view>
@@ -61,8 +34,15 @@
             wx:key="start" data-g="{{g}}" data-i="{{i}}" bindtap="pickSlot">{{it.label}}</view>
         </view>
       </view>
-      <view class="hint" wx:if="{{slot}}">已选：{{slot.dentist_name}} {{slot.start}} ~ {{slot.end}}（提交时再次校验冲突）</view>
+      <view class="hint" wx:if="{{slot}}" style="margin-top:14rpx">已选：{{slot.dentist_name}}医生 {{slot.start}} ~ {{slot.end}}</view>
     </block>
+    <view wx:else class="hint" style="margin-top:14rpx">选好诊所和日期后点「查询可约时段」</view>
+  </view>
+
+  <view class="card" wx:if="{{mode === 'reschedule'}}">
+    <view class="card-title">改约原因（可选）</view>
+    <input class="input" value="{{reason}}" bindinput="onReason" placeholder="如：时间不合适，想改晚一点" />
+    <view class="hint" style="margin-top:10rpx">改约成功后原预约标记「已改约」，新预约指回原预约</view>
   </view>
 
   <view style="height:140rpx"></view>

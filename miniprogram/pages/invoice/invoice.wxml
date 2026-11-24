@@ -1,32 +1,28 @@
 <view class="page" wx:if="{{v}}">
   <view class="card" wx:if="{{v.inv}}">
-    <view class="card-title">🧮 结算单 <text class="mono muted">{{v.inv.invoice_no}}</text></view>
+    <view class="card-title">🧮 就诊结算单 <text class="mono muted">{{v.inv.invoice_no}}</text></view>
     <view class="kv">
       <view class="kv-row"><view class="kv-k">就诊号</view><view class="kv-v mono">{{v.visit_no}}（{{v.status}}）</view></view>
-      <view class="kv-row"><view class="kv-k">患者</view><view class="kv-v">{{v.patient.name}}（{{v.patient.account_no}}）</view></view>
-      <view class="kv-row"><view class="kv-k">版本</view><view class="kv-v">v{{v.inv.revision_no}}（更正保留版本链）· {{v.inv.issued}}</view></view>
+      <view class="kv-row"><view class="kv-k">患者</view><view class="kv-v">{{v.patient_name}}（{{v.patient_account}}）</view></view>
+      <view class="kv-row"><view class="kv-k">诊所 / 医生</view><view class="kv-v">{{v.clinic_code}} · {{v.dentist_name}}医生</view></view>
+      <view class="kv-row"><view class="kv-k">就诊时间</view><view class="kv-v">{{v.when}}</view></view>
+      <view class="kv-row"><view class="kv-k">签发时间</view><view class="kv-v">{{v.inv.issued}} · 版本 v{{v.inv.revision_no}}</view></view>
     </view>
     <view class="tbl-wrap" style="margin-top:16rpx"><table class="tbl">
-      <tr><th>项目</th><th>数量</th><th>单价</th><th>小计</th><th>执行牙医</th></tr>
+      <tr><th>项目</th><th>数量</th><th>单价</th><th>小计</th></tr>
       <tr wx:for="{{v.inv.items}}" wx:key="invoice_item_id">
         <td>{{item.name_snapshot}}</td>
         <td class="num">{{item.units_snapshot}}</td>
         <td class="num">{{item.price}}</td>
         <td class="num">{{item.sub}}</td>
-        <td>{{item.performer_name}}</td>
       </tr>
     </table></view>
     <view class="total-line">合计 <b>{{v.inv.total}}</b></view>
-    <view class="hint" style="margin-top:10rpx">明细直接取自已签署确认的实际治疗，可逐行追溯；本单是就诊结算单，不等同税务发票，不声称已完成收款。</view>
+    <view class="hint" style="margin-top:10rpx">明细由医生签署确认的治疗记录生成，可逐行追溯；本单为就诊结算单，如需发票请到前台办理。</view>
   </view>
 
   <view class="card" wx:else>
     <view class="card-title">🧮 结算单</view>
-    <view class="hint">本次就诊尚无有效结算单。
-      <block wx:if="{{v.treatments.length}}">已签署治疗 {{v.treatments.length}} 项，可生成。</block>
-      <block wx:else>治疗尚未签署确认，不能开单（不手填总价绕过明细）。</block>
-    </view>
-    <button class="btn btn-blue btn-block" style="margin-top:20rpx" loading="{{generating}}"
-      disabled="{{!v.treatments.length}}" bindtap="doGenerate">生成结算单</button>
+    <view class="hint">本次就诊尚未开单。治疗完成后由诊所出具，稍后可在本页面查看。</view>
   </view>
 </view>

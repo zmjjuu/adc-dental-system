@@ -1,24 +1,23 @@
 <view class="login-wrap">
   <view class="login-card">
     <view class="login-logo">🦷</view>
-    <view class="login-title">安德鲁牙科连锁管理系统</view>
-    <view class="login-sub">Andrew's Dental Chain · ADC</view>
+    <view class="login-title">安德鲁牙科</view>
+    <view class="login-sub">Andrew's Dental Chain · 患者服务</view>
 
-    <view class="label">选择岗位账号（演示密码均为 123456）</view>
-    <picker mode="selector" range="{{accounts}}" value="{{index}}" bindchange="onPick">
-      <view class="picker picker-account">
-        <view style="flex:1">
-          <view class="acc-label">{{accounts[index]}}</view>
-        </view>
-        <view class="acc-arrow">▾</view>
-      </view>
-    </picker>
-    <view class="acc-role">{{accountRoles[index]}}</view>
+    <view class="label">账号（患者账号或手机号）</view>
+    <input class="input" value="{{loginName}}" bindinput="onName" placeholder="如 P-1001 或手机号" />
 
     <view class="label">密码</view>
     <input class="input" password value="{{password}}" bindinput="onPwd" placeholder="演示密码 123456" />
 
     <button class="btn btn-primary btn-block login-btn" loading="{{loading}}" bindtap="onLogin">登 录</button>
-    <view class="login-tip">连接不上服务器时自动切换「离线演示模式」，数据在手机本地，可在「我的」页重置</view>
+
+    <view class="demo-box">
+      <view class="demo-title">演示患者账号（密码均为 123456）</view>
+      <view class="demo-line">P-1001 陈雨桐 · 乳胶/树脂过敏（换店预约演示）</view>
+      <view class="demo-line">P-1002 刘明轩 · 新患者初诊评估</view>
+      <view class="demo-line">P-1003~P-1006 · 其余演示患者</view>
+    </view>
+    <view class="login-tip">连接不上服务器时自动切换「离线演示模式」，数据在手机本地</view>
   </view>
 </view>

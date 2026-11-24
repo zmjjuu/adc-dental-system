@@ -3,100 +3,55 @@
     <view class="kv">
       <view class="kv-row"><view class="kv-k">就诊号</view><view class="kv-v mono">{{v.visit_no}}
         <text class="badge {{v.st_cls}}">{{v.status}}</text></view></view>
-      <view class="kv-row"><view class="kv-k">患者</view><view class="kv-v" bindtap="goPatient">
-        {{v.patient.name}}（{{v.patient.account_no}}）· {{v.patient.phone}}
-        <block wx:if="{{!v.patient.email}}"> · 邮箱未填</block></view></view>
-      <view class="kv-row"><view class="kv-k">诊所 / 牙医</view><view class="kv-v">{{v.clinic_code}} · {{v.dentist_name}}（{{v.dentist_no}}）</view></view>
+      <view class="kv-row"><view class="kv-k">诊所</view><view class="kv-v">{{v.clinic_code}} · {{v.clinic_address}}</view></view>
+      <view class="kv-row"><view class="kv-k">牙医</view><view class="kv-v">{{v.dentist_name}}医生</view></view>
       <view class="kv-row"><view class="kv-k">预约时间</view><view class="kv-v">{{v.when}} ~ {{v.whenEnd}}</view></view>
       <view class="kv-row" wx:if="{{v.arrived}}"><view class="kv-k">实际到诊</view><view class="kv-v">{{v.arrived}}</view></view>
-      <view class="kv-row" wx:if="{{v.cancelledAt}}"><view class="kv-k">取消时间</view><view class="kv-v">{{v.cancelledAt}}（{{v.cancel_initiator}}）</view></view>
-      <view class="kv-row" wx:if="{{v.requested_treatments}}"><view class="kv-k">期望治疗</view><view class="kv-v">{{v.requested_treatments}}（只记录不计费）</view></view>
+      <view class="kv-row" wx:if="{{v.requested_treatments}}"><view class="kv-k">就诊需求</view><view class="kv-v">{{v.requested_treatments}}</view></view>
       <view class="kv-row" wx:if="{{v.special_needs}}"><view class="kv-k">特殊需求</view><view class="kv-v">{{v.special_needs}}</view></view>
-      <view class="kv-row" wx:if="{{v.reason}}"><view class="kv-k">原因</view><view class="kv-v">{{v.reason}}</view></view>
-      <view class="kv-row" wx:if="{{v.previous_no}}"><view class="kv-k">改约链</view><view class="kv-v">由 {{v.previous_no}} 改约而来</view></view>
-      <view class="kv-row" wx:if="{{v.next_visit}}"><view class="kv-k">改约链</view><view class="kv-v">已改约至 {{v.next_visit.visit_no}}（{{v.next_visit.status}}）</view></view>
+      <view class="kv-row" wx:if="{{v.cancelledAt}}"><view class="kv-k">取消时间</view><view class="kv-v">{{v.cancelledAt}}</view></view>
+      <view class="kv-row" wx:if="{{v.reason}}"><view class="kv-k">备注</view><view class="kv-v">{{v.reason}}</view></view>
+      <view class="kv-row" wx:if="{{v.previous_no}}"><view class="kv-k">改约记录</view><view class="kv-v">由 {{v.previous_no}} 改约而来</view></view>
     </view>
   </view>
 
-  <view class="card">
-    <view class="card-title">🧾 过敏档案（{{v.patient.allergy_inquiry_status}}）</view>
-    <block wx:if="{{v.allergies.length}}">
-      <view class="allergy-item" wx:for="{{v.allergies}}" wx:key="patient_allergy_id">
-        <view style="min-width:120rpx;font-weight:600">{{item.allergy_name}}</view>
-        <view class="badge {{item.st_cls}}">{{item.status}}</view>
-        <view class="muted" style="flex:1">{{item.note || ''}}</view>
-      </view>
-    </block>
-    <view wx:else class="hint">无已记录过敏，诊前由牙医复核。</view>
+  <view class="card" wx:if="{{v.treatments.length}}">
+    <view class="card-title">🩺 治疗明细</view>
+    <view class="tbl-wrap"><table class="tbl">
+      <tr><th>项目</th><th>数量</th><th>单价</th><th>小计</th></tr>
+      <tr wx:for="{{v.treatments}}" wx:key="treatment_id">
+        <td>{{item.treatment_name}}</td>
+        <td class="num">{{item.units}}</td>
+        <td class="num">{{item.price}}</td>
+        <td class="num">{{item.sub}}</td>
+      </tr>
+    </table></view>
   </view>
 
-  <view class="card">
-    <view class="card-title">🩺 实际治疗（已签署确认后进入结算）</view>
-    <block wx:if="{{v.treatments.length}}">
-      <view class="tbl-wrap"><table class="tbl">
-        <tr><th>项目</th><th>数量</th><th>单价</th><th>小计</th><th>状态</th></tr>
-        <tr wx:for="{{v.treatments}}" wx:key="treatment_id">
-          <td>{{item.treatment_name}}</td>
-          <td class="num">{{item.units}}</td>
-          <td class="num">{{item.price}}</td>
-          <td class="num">{{item.sub}}</td>
-          <td><text class="badge {{item.st_cls}}">{{item.status}}</text></td>
-        </tr>
-      </table></view>
-    </block>
-    <view wx:else class="hint">暂无治疗记录。</view>
-  </view>
-
-  <view class="card">
+  <view class="card" wx:if="{{v.invoice}}">
     <view class="card-title">🧮 结算单</view>
-    <block wx:if="{{v.invoice}}">
-      <view class="kv">
-        <view class="kv-row"><view class="kv-k">单号</view><view class="kv-v mono">{{v.invoice.invoice_no}} · v{{v.invoice.revision_no}}</view></view>
-        <view class="kv-row"><view class="kv-k">状态</view><view class="kv-v"><text class="badge b-green">已签发</text> · {{v.invoice.issued_at}}</view></view>
-      </view>
-      <view class="total-line">合计 <b>{{total}}</b></view>
-      <button class="btn btn-ghost btn-block" style="margin-top:16rpx" bindtap="goInvoice">查看结算明细</button>
-    </block>
-    <view wx:else class="hint">尚未开单。</view>
+    <view class="kv-row"><view class="kv-k">单号</view><view class="kv-v mono">{{v.invoice.invoice_no}}</view></view>
+    <view class="total-line">合计 <b>{{invoiceTotal}}</b></view>
+    <button class="btn btn-ghost btn-block" style="margin-top:16rpx" bindtap="goInvoice">查看结算明细</button>
   </view>
 
-  <view style="height:140rpx"></view>
+  <view style="height:130rpx"></view>
 </view>
 
 <view class="footer-fixed" wx:if="{{v}}">
   <view class="btn-row" style="justify-content:flex-end">
-    <block wx:if="{{isReception()}}">
-      <button class="btn btn-primary" wx:if="{{canCheckin()}}" bindtap="doCheckin">登记到诊</button>
-      <button class="btn btn-danger" wx:if="{{canCancel()}}" bindtap="openCancel">取消</button>
-      <button class="btn btn-ghost" wx:if="{{canResched()}}" bindtap="doResched">改约</button>
-      <button class="btn btn-ghost" wx:if="{{canMark()}}" bindtap="doMark">到期待核实</button>
-      <button class="btn btn-danger" wx:if="{{canConfirmNoshow()}}" bindtap="openNoshow">确认未到诊</button>
-      <button class="btn btn-blue" wx:if="{{canInvoice()}}" bindtap="doInvoice">开结算单</button>
-    </block>
-    <button class="btn btn-primary" wx:if="{{canTreat()}}" bindtap="goTreat">🩺 接诊记录治疗</button>
+    <button class="btn btn-danger" wx:if="{{canCancel()}}" bindtap="openCancel">取消预约</button>
+    <button class="btn btn-ghost" wx:if="{{canResched()}}" bindtap="goResched">改约</button>
+    <button class="btn btn-primary" bindtap="load">刷新</button>
   </view>
 </view>
 
-<!-- 取消弹层 -->
 <view class="mask" wx:if="{{sheet === 'cancel'}}" bindtap="closeSheet"></view>
 <view class="sheet" wx:if="{{sheet === 'cancel'}}">
   <view class="sheet-title">取消预约 <text bindtap="closeSheet" style="color:#94a3b8">✕</text></view>
-  <view class="label">发起方（患者取消 / 诊所撤销分别统计）</view>
-  <picker mode="selector" range="{{['患者','诊所']}}" value="{{cancelWho === '患者' ? 0 : 1}}" bindchange="onCancelWho">
-    <view class="picker">{{cancelWho}}</view>
-  </picker>
-  <view class="label">原因</view>
-  <input class="input" value="{{cancelReason}}" bindinput="onCancelReason" placeholder="如：家中有事，改日再来" />
+  <view class="label">取消原因（可选）</view>
+  <input class="input" value="{{reason}}" bindinput="onReason" placeholder="如：临时有事，改日再来" />
   <button class="btn btn-danger btn-block" style="margin-top:24rpx" bindtap="doCancel">确认取消</button>
-</view>
-
-<!-- 确认未到诊弹层 -->
-<view class="mask" wx:if="{{sheet === 'noshow'}}" bindtap="closeSheet"></view>
-<view class="sheet" wx:if="{{sheet === 'noshow'}}">
-  <view class="sheet-title">确认未到诊 <text bindtap="closeSheet" style="color:#94a3b8">✕</text></view>
-  <view class="label">确认原因（按经确认的规则处理后才能标记未到诊）</view>
-  <input class="input" value="{{cancelReason}}" bindinput="onCancelReason" placeholder="如：已电话联系确认爽约" />
-  <button class="btn btn-danger btn-block" style="margin-top:24rpx" bindtap="doConfirmNoshow">确认未到诊</button>
 </view>
 
 <view class="empty" wx:if="{{!v && !loading}}">加载失败</view>

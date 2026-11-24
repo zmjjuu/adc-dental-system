@@ -153,10 +153,15 @@ SCHEMA = [
         audit_id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES user_accounts(user_id),
         entity_type TEXT NOT NULL, entity_key TEXT NOT NULL, action TEXT NOT NULL,
         happened_at TEXT NOT NULL, reason TEXT, before_value TEXT, after_value TEXT)""",
+    # ---- 患者自助端（课程要求的扩展；患者账号独立于员工账号，不并入 25 张业务表） ----
+    """CREATE TABLE IF NOT EXISTS patient_accounts (
+        account_id INTEGER PRIMARY KEY, patient_id INTEGER NOT NULL UNIQUE REFERENCES patients(patient_id),
+        login_name TEXT NOT NULL UNIQUE, credential_ref TEXT NOT NULL,
+        active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL)""",
 ]
 
 # 全部表名（按依赖顺序，供重置时逆序删除）
-TABLES = ['patient_allergies', 'visits', 'dentist_qualifications', 'dentist_schedules',
+TABLES = ['patient_allergies', 'patient_accounts', 'visits', 'dentist_qualifications', 'dentist_schedules',
           'treatment_qualification_requirements', 'performed_treatments', 'treatment_revisions',
           'invoices', 'invoice_revisions', 'invoice_items', 'cost_entries', 'cost_allocations',
           'quarter_closes', 'dentist_quarter_results', 'quarter_result_sources',
@@ -429,6 +434,11 @@ def seed(conn):
         assert got == want, f"牙医 {did} Q3 结果应为 {want}，实际 {got}"
     audit(conn, fin, 'quarter_closes', f'{2026}-Q{3}', '初始化已批准季度核算',
           '演示数据初始化：与设计文档第 6 章核算演示一致')
+
+    # ---- 患者自助端账号（小程序患者端登录；默认密码 123456，登录名 = 账号或手机号） ----
+    for row in conn.execute("SELECT patient_id, account_no FROM patients").fetchall():
+        _insert(conn, 'patient_accounts', patient_id=row['patient_id'], login_name=row['account_no'],
+                credential_ref=generate_password_hash('123456'), created_at=_dt(TODAY))
 
     conn.commit()
     print(f"[seed] 演示数据完成：诊所 {conn.execute('SELECT COUNT(*) c FROM clinics').fetchone()['c']} 家、"

@@ -8,6 +8,7 @@ const OFFLINE_KEY = 'adc_offline';
 
 let _mem = null;      // Node 测试用内存存储
 let currentUser = null;
+let currentPatient = null;
 
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
 function m2(x) { return Math.round((Number(x) + 1e-9) * 100) / 100; }
@@ -180,6 +181,11 @@ function seed() {
         roles: [{ role_code: 'reception', role_name: '前台' }] },
     ],
   };
+  // 患者自助端账号（默认密码 123456，登录名 = 账号或手机号）
+  db.patient_accounts = db.patients.map((p, i) => ({
+    account_id: i + 1, patient_id: p.patient_id, login_name: p.account_no,
+    password: '123456', active: 1,
+  }));
   return db;
 }
 
@@ -363,37 +369,129 @@ route(/^\/patients\/(\d+)\/allergies$/, (db, method, m, b) => {
 });
 
 // ---------------- 预约与就诊 ----------------
+// 预约创建（前台与患者自助共用同一套校验规则）
+function bookVisitInternal(db, b, pid, userId) {
+  const start = dtOf(b.scheduled_start), end = dtOf(b.scheduled_end);
+  const d = db.dentists.find(x => x.dentist_id === Number(b.dentist_id));
+  if (!db.patients.find(x => x.patient_id === Number(pid))) throw biz('患者不存在');
+  if (!db.clinics.find(x => x.clinic_id === Number(b.clinic_id) && x.active)) throw biz('诊所不存在或已停用');
+  if (!d) throw biz('牙医不存在');
+  if (!d.active) throw biz('该牙医已停用，不能安排预约');
+  if (!(start < end)) throw biz('预约开始时间必须早于结束时间');
+  const covered = db.schedules.some(s => s.dentist_id === d.dentist_id &&
+    s.clinic_id === Number(b.clinic_id) && s.status === '有效' &&
+    dtOf(s.start_at) <= start && dtOf(s.end_at) >= end);
+  if (!covered) throw biz('该牙医在所选诊所未覆盖该时段的出诊安排，请更换时段或诊所');
+  const conflict = db.visits.find(v => v.dentist_id === d.dentist_id &&
+    ['待到诊', '已到诊', '治疗完成'].includes(v.status) &&
+    dtOf(v.scheduled_start) < end && dtOf(v.scheduled_end) > start);
+  if (conflict) throw biz(`牙医 ${d.name} 该时段已有预约（${conflict.visit_no}），请选择其他时段`);
+  if (b.treatment_type_id) checkQual(db, d.dentist_id, Number(b.treatment_type_id));
+  db.seq.visit += 1;
+  const day = todayStr().replace(/-/g, '');
+  const n = db.visits.filter(v => v.visit_no.startsWith('V-' + day)).length + 1;
+  const v = { visit_id: db.seq.visit, visit_no: `V-${day}-${String(n).padStart(4, '0')}`,
+    patient_id: Number(pid), dentist_id: d.dentist_id, clinic_id: Number(b.clinic_id),
+    scheduled_start: b.scheduled_start + (b.scheduled_start.length === 16 ? ':00' : ''),
+    scheduled_end: b.scheduled_end + (b.scheduled_end.length === 16 ? ':00' : ''),
+    requested_treatments: b.requested_treatments || '', special_needs: b.special_needs || null,
+    attended: 0, arrived_at: null, status: '待到诊', previous_visit_id: null,
+    cancelled_at: null, cancel_initiator: null, reason: null, created_by: userId };
+  db.visits.push(v);
+  saveDB(db);
+  return v;
+}
+
+// 取消（前台与患者自助共用）
+function cancelVisitInternal(db, vid, initiator, reason) {
+  const v = db.visits.find(x => x.visit_id === Number(vid));
+  if (!v) throw biz('预约不存在');
+  if (!['待到诊', '待核实'].includes(v.status)) throw biz(`当前状态「${v.status}」不能按普通取消处理`);
+  if (!['患者', '诊所'].includes(initiator)) throw biz('取消发起方只能是患者或诊所');
+  v.status = initiator === '患者' ? '患者取消' : '诊所撤销';
+  v.cancelled_at = nowStr(); v.cancel_initiator = initiator; v.reason = reason || '';
+  saveDB(db);
+  return v;
+}
+
+// 改约（前台与患者自助共用）
+function rescheduleVisitInternal(db, vid, clinic_id, dentist_id, scheduled_start, scheduled_end, reason, userId) {
+  const v = db.visits.find(x => x.visit_id === Number(vid));
+  if (!v) throw biz('预约不存在');
+  if (!['待到诊', '待核实'].includes(v.status)) throw biz(`当前状态「${v.status}」不能改约`);
+  const start = dtOf(scheduled_start), end = dtOf(scheduled_end);
+  const d = db.dentists.find(x => x.dentist_id === Number(dentist_id));
+  if (!db.clinics.find(x => x.clinic_id === Number(clinic_id) && x.active)) throw biz('诊所不存在或已停用');
+  if (!d || !d.active) throw biz('牙医不存在或已停用');
+  if (!(start < end)) throw biz('预约开始时间必须早于结束时间');
+  const covered = db.schedules.some(s => s.dentist_id === d.dentist_id &&
+    s.clinic_id === Number(clinic_id) && s.status === '有效' &&
+    dtOf(s.start_at) <= start && dtOf(s.end_at) >= end);
+  if (!covered) throw biz('该牙医在所选诊所未覆盖该时段的出诊安排，请更换时段或诊所');
+  const conflict = db.visits.find(x => x.dentist_id === d.dentist_id && x.visit_id !== v.visit_id &&
+    ['待到诊', '已到诊', '治疗完成'].includes(x.status) &&
+    dtOf(x.scheduled_start) < end && dtOf(x.scheduled_end) > start);
+  if (conflict) throw biz(`牙医 ${d.name} 该时段已有预约（${conflict.visit_no}），请选择其他时段`);
+  db.seq.visit += 1;
+  const day = todayStr().replace(/-/g, '');
+  const n = db.visits.filter(x => x.visit_no.startsWith('V-' + day)).length + 1;
+  const nv = { visit_id: db.seq.visit, visit_no: `V-${day}-${String(n).padStart(4, '0')}`,
+    patient_id: v.patient_id, dentist_id: d.dentist_id, clinic_id: Number(clinic_id),
+    scheduled_start: scheduled_start + (scheduled_start.length === 16 ? ':00' : ''),
+    scheduled_end: scheduled_end + (scheduled_end.length === 16 ? ':00' : ''),
+    requested_treatments: v.requested_treatments, special_needs: v.special_needs,
+    attended: 0, arrived_at: null, status: '待到诊', previous_visit_id: v.visit_id,
+    cancelled_at: null, cancel_initiator: null, reason: `改约原因：${reason || ''}`,
+    created_by: userId };
+  v.status = '已改约'; v.reason = reason || '';
+  db.visits.push(nv);
+  saveDB(db);
+  return nv;
+}
+
+// 可约时段计算（前台与患者自助共用）
+function computeSlots(db, clinicId, dateStr, treatmentTypeId) {
+  const day = dtOf(dateStr);
+  const dayEnd = new Date(day.getTime() + 86400000);
+  const out = [];
+  for (const s of db.schedules) {
+    if (s.clinic_id !== Number(clinicId) || s.status !== '有效') continue;
+    const d = db.dentists.find(x => x.dentist_id === s.dentist_id);
+    if (!d || !d.active) continue;
+    if (treatmentTypeId) {
+      try { checkQual(db, d.dentist_id, Number(treatmentTypeId)); }
+      catch (e) { continue; }
+    }
+    let segStart = new Date(Math.max(dtOf(s.start_at), day));
+    const segEnd = new Date(Math.min(dtOf(s.end_at), dayEnd));
+    const busy = db.visits.filter(v => v.dentist_id === d.dentist_id &&
+      ['待到诊', '已到诊', '治疗完成'].includes(v.status) &&
+      dtOf(v.scheduled_start) < segEnd && dtOf(v.scheduled_end) > segStart)
+      .map(v => [dtOf(v.scheduled_start), dtOf(v.scheduled_end)]).sort((a, b2) => a[0] - b2[0]);
+    const segs = [];
+    let cur = segStart;
+    for (const [bs, be] of busy) {
+      if (bs > cur) segs.push([cur, bs]);
+      if (be > cur) cur = be;
+    }
+    if (cur < segEnd) segs.push([cur, segEnd]);
+    const fmtT = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')} ${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')}`;
+    for (const [a, b2] of segs) {
+      let t = a;
+      while (t.getTime() + 40 * 60000 <= b2.getTime()) {
+        out.push({ dentist_id: d.dentist_id, dentist_name: d.name, employee_no: d.employee_no,
+          start: fmtT(t), end: fmtT(new Date(t.getTime() + 40 * 60000)) });
+        t = new Date(t.getTime() + 40 * 60000);
+      }
+    }
+  }
+  return out;
+}
+
 route(/^\/visits$/, (db, method, m, b) => {
   if (method === 'POST') {
     requireRole(db, 'reception');
-    const start = dtOf(b.scheduled_start), end = dtOf(b.scheduled_end);
-    const d = db.dentists.find(x => x.dentist_id === Number(b.dentist_id));
-    if (!db.patients.find(x => x.patient_id === Number(b.patient_id))) throw biz('患者不存在');
-    if (!db.clinics.find(x => x.clinic_id === Number(b.clinic_id) && x.active)) throw biz('诊所不存在或已停用');
-    if (!d) throw biz('牙医不存在');
-    if (!d.active) throw biz('该牙医已停用，不能安排预约');
-    if (!(start < end)) throw biz('预约开始时间必须早于结束时间');
-    const covered = db.schedules.some(s => s.dentist_id === d.dentist_id &&
-      s.clinic_id === Number(b.clinic_id) && s.status === '有效' &&
-      dtOf(s.start_at) <= start && dtOf(s.end_at) >= end);
-    if (!covered) throw biz('该牙医在所选诊所未覆盖该时段的出诊安排，请更换时段或诊所');
-    const conflict = db.visits.find(v => v.dentist_id === d.dentist_id &&
-      ['待到诊', '已到诊', '治疗完成'].includes(v.status) &&
-      dtOf(v.scheduled_start) < end && dtOf(v.scheduled_end) > start);
-    if (conflict) throw biz(`牙医 ${d.name} 该时段已有预约（${conflict.visit_no}），请选择其他时段`);
-    if (b.treatment_type_id) checkQual(db, d.dentist_id, Number(b.treatment_type_id));
-    db.seq.visit += 1;
-    const day = todayStr().replace(/-/g, '');
-    const n = db.visits.filter(v => v.visit_no.startsWith('V-' + day)).length + 1;
-    const v = { visit_id: db.seq.visit, visit_no: `V-${day}-${String(n).padStart(4, '0')}`,
-      patient_id: Number(b.patient_id), dentist_id: d.dentist_id, clinic_id: Number(b.clinic_id),
-      scheduled_start: b.scheduled_start + (b.scheduled_start.length === 16 ? ':00' : ''),
-      scheduled_end: b.scheduled_end + (b.scheduled_end.length === 16 ? ':00' : ''),
-      requested_treatments: b.requested_treatments || '', special_needs: b.special_needs || null,
-      attended: 0, arrived_at: null, status: '待到诊', previous_visit_id: null,
-      cancelled_at: null, cancel_initiator: null, reason: null, created_by: currentUser.user_id };
-    db.visits.push(v);
-    saveDB(db);
+    const v = bookVisitInternal(db, b, b.patient_id, currentUser.user_id);
     return { visit_id: v.visit_id, visit_no: v.visit_no };
   }
   const status = b.status || '', dentistId = b.dentist_id || '';
@@ -424,45 +522,15 @@ route(/^\/visits\/(\d+)\/checkin$/, (db, method, m) => {
 
 route(/^\/visits\/(\d+)\/cancel$/, (db, method, m, b) => {
   requireRole(db, 'reception');
-  const v = db.visits.find(x => x.visit_id === Number(m[1]));
-  if (!['待到诊', '待核实'].includes(v.status)) throw biz(`当前状态「${v.status}」不能按普通取消处理`);
-  if (!['患者', '诊所'].includes(b.initiator)) throw biz('取消发起方只能是患者或诊所');
-  v.status = b.initiator === '患者' ? '患者取消' : '诊所撤销';
-  v.cancelled_at = nowStr(); v.cancel_initiator = b.initiator; v.reason = b.reason || '';
-  saveDB(db); return { ok: true };
+  cancelVisitInternal(db, m[1], b.initiator, b.reason);
+  return { ok: true };
 });
 
 route(/^\/visits\/(\d+)\/reschedule$/, (db, method, m, b) => {
   requireRole(db, 'reception');
-  const v = db.visits.find(x => x.visit_id === Number(m[1]));
-  if (!['待到诊', '待核实'].includes(v.status)) throw biz(`当前状态「${v.status}」不能改约`);
-  const start = dtOf(b.scheduled_start), end = dtOf(b.scheduled_end);
-  const d = db.dentists.find(x => x.dentist_id === Number(b.dentist_id));
-  if (!db.clinics.find(x => x.clinic_id === Number(b.clinic_id) && x.active)) throw biz('诊所不存在或已停用');
-  if (!d || !d.active) throw biz('牙医不存在或已停用');
-  if (!(start < end)) throw biz('预约开始时间必须早于结束时间');
-  const covered = db.schedules.some(s => s.dentist_id === d.dentist_id &&
-    s.clinic_id === Number(b.clinic_id) && s.status === '有效' &&
-    dtOf(s.start_at) <= start && dtOf(s.end_at) >= end);
-  if (!covered) throw biz('该牙医在所选诊所未覆盖该时段的出诊安排，请更换时段或诊所');
-  const conflict = db.visits.find(x => x.dentist_id === d.dentist_id && x.visit_id !== v.visit_id &&
-    ['待到诊', '已到诊', '治疗完成'].includes(x.status) &&
-    dtOf(x.scheduled_start) < end && dtOf(x.scheduled_end) > start);
-  if (conflict) throw biz(`牙医 ${d.name} 该时段已有预约（${conflict.visit_no}），请选择其他时段`);
-  db.seq.visit += 1;
-  const day = todayStr().replace(/-/g, '');
-  const n = db.visits.filter(x => x.visit_no.startsWith('V-' + day)).length + 1;
-  const nv = { visit_id: db.seq.visit, visit_no: `V-${day}-${String(n).padStart(4, '0')}`,
-    patient_id: v.patient_id, dentist_id: d.dentist_id, clinic_id: Number(b.clinic_id),
-    scheduled_start: b.scheduled_start + (b.scheduled_start.length === 16 ? ':00' : ''),
-    scheduled_end: b.scheduled_end + (b.scheduled_end.length === 16 ? ':00' : ''),
-    requested_treatments: v.requested_treatments, special_needs: v.special_needs,
-    attended: 0, arrived_at: null, status: '待到诊', previous_visit_id: v.visit_id,
-    cancelled_at: null, cancel_initiator: null, reason: `改约原因：${b.reason || ''}`,
-    created_by: currentUser.user_id };
-  v.status = '已改约'; v.reason = b.reason || '';
-  db.visits.push(nv);
-  saveDB(db); return { visit_id: nv.visit_id };
+  const nv = rescheduleVisitInternal(db, m[1], b.clinic_id, b.dentist_id,
+    b.scheduled_start, b.scheduled_end, b.reason, currentUser.user_id);
+  return { visit_id: nv.visit_id };
 });
 
 route(/^\/visits\/(\d+)\/noshow$/, (db, method, m, b) => {
@@ -480,43 +548,7 @@ route(/^\/visits\/(\d+)\/noshow$/, (db, method, m, b) => {
 });
 
 // ---------------- 可约时段 ----------------
-route(/^\/slots$/, (db, method, m, b) => {
-  const day = dtOf(b.date);
-  const dayEnd = new Date(day.getTime() + 86400000);
-  const out = [];
-  for (const s of db.schedules) {
-    if (s.clinic_id !== Number(b.clinic_id) || s.status !== '有效') continue;
-    const d = db.dentists.find(x => x.dentist_id === s.dentist_id);
-    if (!d || !d.active) continue;
-    if (b.treatment_type_id) {
-      try { checkQual(db, d.dentist_id, Number(b.treatment_type_id)); }
-      catch (e) { continue; }
-    }
-    let segStart = new Date(Math.max(dtOf(s.start_at), day));
-    const segEnd = new Date(Math.min(dtOf(s.end_at), dayEnd));
-    const busy = db.visits.filter(v => v.dentist_id === d.dentist_id &&
-      ['待到诊', '已到诊', '治疗完成'].includes(v.status) &&
-      dtOf(v.scheduled_start) < segEnd && dtOf(v.scheduled_end) > segStart)
-      .map(v => [dtOf(v.scheduled_start), dtOf(v.scheduled_end)]).sort((a, b2) => a[0] - b2[0]);
-    const segs = [];
-    let cur = segStart;
-    for (const [bs, be] of busy) {
-      if (bs > cur) segs.push([cur, bs]);
-      if (be > cur) cur = be;
-    }
-    if (cur < segEnd) segs.push([cur, segEnd]);
-    const fmtT = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')} ${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')}`;
-    for (const [a, b2] of segs) {
-      let t = a;
-      while (t.getTime() + 40 * 60000 <= b2.getTime()) {
-        out.push({ dentist_id: d.dentist_id, dentist_name: d.name, employee_no: d.employee_no,
-          start: fmtT(t), end: fmtT(new Date(t.getTime() + 40 * 60000)) });
-        t = new Date(t.getTime() + 40 * 60000);
-      }
-    }
-  }
-  return out;
-});
+route(/^\/slots$/, (db, method, m, b) => computeSlots(db, b.clinic_id, b.date, b.treatment_type_id));
 
 function checkQual(db, dentistId, ttId) {
   const tt = db.treatment_types.find(x => x.treatment_type_id === ttId);
@@ -929,6 +961,115 @@ route(/^\/treatment-types$/, (db, method, m, b) => {
     requirement_names: (b.qualification_ids || []).map(id =>
       db.qualifications.find(x => x.qualification_id === Number(id))?.qualification_name) });
   saveDB(db); return { treatment_type_id: db.treatment_types.length };
+});
+
+// ================= 患者自助端（小程序患者端） =================
+function requirePatient(db) {
+  if (!currentPatient) throw reqErr('未登录或登录已失效，请重新登录', 401);
+  const p = db.patients.find(x => x.patient_id === currentPatient);
+  if (!p) throw reqErr('未登录或登录已失效，请重新登录', 401);
+  return p;
+}
+
+function patientWithAllergies(db, p) {
+  return { ...clone(p), allergies: clone(p.allergies) };
+}
+
+route(/^\/patient\/login$/, (db, method, m, b) => {
+  const login = (b.login_name || '').trim();
+  let acc = db.patient_accounts.find(a => a.login_name === login);
+  if (!acc) {
+    const p = db.patients.find(x => x.phone === login);
+    acc = p && db.patient_accounts.find(a => a.patient_id === p.patient_id);
+  }
+  if (!acc || acc.password !== (b.password || '')) throw reqErr('账号或密码不正确', 401);
+  if (!acc.active) throw reqErr('账号已停用', 403);
+  currentPatient = acc.patient_id;
+  const p = db.patients.find(x => x.patient_id === acc.patient_id);
+  return { token: 'offline-token', patient: patientWithAllergies(db, p) };
+});
+
+route(/^\/patient\/logout$/, (db) => { currentPatient = null; return { ok: true }; });
+
+route(/^\/patient\/me$/, (db, method, m, b) => {
+  const p = requirePatient(db);
+  if (method === 'PUT') {
+    for (const f of ['phone', 'email', 'billing_address', 'emergency_contact_name', 'emergency_contact_phone'])
+      if (f in b) p[f] = b[f];
+    saveDB(db);
+  }
+  return patientWithAllergies(db, p);
+});
+
+route(/^\/patient\/me\/allergies$/, (db, method, m, b) => {
+  const p = requirePatient(db);
+  const t = db.allergy_types.find(x => x.allergy_type_id === Number(b.allergy_type_id));
+  if (!t) throw biz('过敏类型不存在');
+  const old = p.allergies.find(a => a.allergy_type_id === Number(b.allergy_type_id));
+  if (old) {
+    if (b.note !== undefined) old.note = b.note;
+  } else {
+    p.allergies.push({ patient_allergy_id: Date.now() + Math.random() * 1000 | 0,
+      allergy_type_id: t.allergy_type_id, allergy_name: t.allergy_name,
+      status: '待核实', note: b.note || '' });
+  }
+  p.allergy_inquiry_status = '已报告';
+  saveDB(db);
+  return { ok: true };
+});
+
+route(/^\/patient\/meta$/, (db) => ({
+  clinics: db.clinics.filter(c => c.active).map(c => ({ clinic_id: c.clinic_id,
+    clinic_code: c.clinic_code, postal_address: c.postal_address, phone: c.phone })),
+  treatment_types: db.treatment_types.filter(t => t.active).map(t => ({ treatment_type_id: t.treatment_type_id,
+    treatment_code: t.treatment_code, treatment_name: t.treatment_name, unit_name: t.unit_name,
+    default_unit_price: t.default_unit_price })),
+  allergy_types: db.allergy_types,
+}));
+
+route(/^\/patient\/slots$/, (db, method, m, b) => {
+  requirePatient(db);
+  return computeSlots(db, b.clinic_id, b.date, b.treatment_type_id);
+});
+
+route(/^\/patient\/visits$/, (db, method, m, b) => {
+  const p = requirePatient(db);
+  if (method === 'POST') {
+    const v = bookVisitInternal(db, b, p.patient_id, null);
+    return { visit_id: v.visit_id, visit_no: v.visit_no };
+  }
+  return db.visits.filter(v => v.patient_id === p.patient_id)
+    .sort((a, b2) => b2.scheduled_start.localeCompare(a.scheduled_start))
+    .map(v => visitListItem(db, v));
+});
+
+route(/^\/patient\/visits\/(\d+)$/, (db, method, m) => {
+  const p = requirePatient(db);
+  const v = db.visits.find(x => x.visit_id === Number(m[1]) && x.patient_id === p.patient_id);
+  if (!v) throw biz('预约不存在');
+  const d = db.dentists.find(x => x.dentist_id === v.dentist_id);
+  const c = db.clinics.find(x => x.clinic_id === v.clinic_id);
+  const inv = currentInvoice(db, v.visit_id);
+  return { ...visitListItem(db, v), dentist_name: d.name, dentist_no: d.employee_no,
+    clinic_address: c.postal_address,
+    treatments: currentTreatments(db, v.visit_id), invoice: inv };
+});
+
+route(/^\/patient\/visits\/(\d+)\/cancel$/, (db, method, m, b) => {
+  const p = requirePatient(db);
+  const v = db.visits.find(x => x.visit_id === Number(m[1]) && x.patient_id === p.patient_id);
+  if (!v) throw biz('预约不存在');
+  cancelVisitInternal(db, v.visit_id, '患者', b.reason || '患者主动取消');
+  return { ok: true };
+});
+
+route(/^\/patient\/visits\/(\d+)\/reschedule$/, (db, method, m, b) => {
+  const p = requirePatient(db);
+  const v = db.visits.find(x => x.visit_id === Number(m[1]) && x.patient_id === p.patient_id);
+  if (!v) throw biz('预约不存在');
+  const nv = rescheduleVisitInternal(db, v.visit_id, b.clinic_id, b.dentist_id,
+    b.scheduled_start, b.scheduled_end, b.reason || '患者自助改约', null);
+  return { visit_id: nv.visit_id };
 });
 
 // ---------------- 对外接口 ----------------
