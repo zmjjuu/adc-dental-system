@@ -104,8 +104,8 @@ assert cd['status'] == '患者取消' and cd['cancel_initiator'] == '患者'
 ok('患者取消（状态：患者取消，进入取消率统计分母）')
 
 # 结算单查看：由员工走完 到诊→治疗→签署→开单，患者查看
-staff = call('POST', '/api/login', body={'login_name': 'reception01', 'password': '123456'})['token']
-dent = call('POST', '/api/login', body={'login_name': 'dentist01', 'password': '123456'})['token']
+staff = call('POST', '/api/login', body={'login_name': 'F-1001', 'password': '123456'})['token']
+dent = call('POST', '/api/login', body={'login_name': 'D-3012', 'password': '123456'})['token']
 slots2 = call('GET', '/api/patient/slots?clinic_id=2&date=2026-11-23&treatment_type_id=1', ptok)
 s2 = slots2[0]
 v2 = call('POST', '/api/patient/visits', ptok, body={

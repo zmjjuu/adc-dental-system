@@ -226,16 +226,16 @@ def seed(conn):
             _insert(conn, 'user_roles', user_id=uid, role_id=role_ids[c])
         return uid
 
-    hq = user('hq01', '赵德柱', role_codes=('hq',))
-    ops = user('ops01', '吴建国', role_codes=('ops',))
-    fin = user('finance01', '郑晓东', role_codes=('finance',))
-    rec1 = user('reception01', '周小燕', role_codes=('reception',))
-    rec2 = user('reception02', '林芳', role_codes=('reception',))
+    hq = user('H-6001', '赵德柱', role_codes=('hq',))
+    ops = user('O-5001', '吴建国', role_codes=('ops',))
+    fin = user('C-4001', '郑晓东', role_codes=('finance',))
+    rec1 = user('F-1001', '周小燕', role_codes=('reception',))
+    rec2 = user('F-1002', '林芳', role_codes=('reception',))
     _ = rec2
-    # 牙医账号先占位，dentist_id 在牙医记录创建后回填
-    acc_d1 = _insert(conn, 'user_accounts', login_name='dentist01', display_name='李铭',
+    # 牙医账号先占位（登录名 = 员工工号），dentist_id 在牙医记录创建后回填
+    acc_d1 = _insert(conn, 'user_accounts', login_name='D-3012', display_name='李铭',
                      credential_ref=generate_password_hash('123456'))
-    acc_d2 = _insert(conn, 'user_accounts', login_name='dentist02', display_name='王雅',
+    acc_d2 = _insert(conn, 'user_accounts', login_name='D-3015', display_name='王雅',
                      credential_ref=generate_password_hash('123456'))
 
     # ---- 诊所 ----

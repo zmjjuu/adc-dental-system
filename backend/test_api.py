@@ -32,12 +32,12 @@ def login(name):
 ok = lambda s: print(f'  [OK] {s}')
 
 print('=== ADC 冒烟测试 ===')
-tok_rec = login('reception01')
-tok_d1 = login('dentist01')
-tok_d2 = login('dentist02')
-tok_fin = login('finance01')
-tok_hq = login('hq01')
-tok_ops = login('ops01')
+tok_rec = login('F-1001')
+tok_d1 = login('D-3012')
+tok_d2 = login('D-3015')
+tok_fin = login('C-4001')
+tok_hq = login('H-6001')
+tok_ops = login('O-5001')
 ok('六个演示账号登录')
 
 meta = call('GET', '/api/meta', tok_rec)
@@ -63,7 +63,7 @@ v1 = call('POST', '/api/visits', tok_rec, body={
     'patient_id': pid, 'clinic_id': clinics['C-B02'], 'dentist_id': dents['D-3012']['dentist_id'],
     'scheduled_start': clean_slot['start'], 'scheduled_end': clean_slot['end'],
     'requested_treatments': '洗牙', 'treatment_type_id': tts['CLEAN']['treatment_type_id']})
-tok_rec2 = login('reception02')
+tok_rec2 = login('F-1002')
 try:
     call('POST', '/api/visits', tok_rec2, body={
         'patient_id': pid, 'clinic_id': clinics['C-B02'], 'dentist_id': dents['D-3012']['dentist_id'],

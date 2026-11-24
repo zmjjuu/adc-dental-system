@@ -1010,6 +1010,6 @@ if __name__ == '__main__':
     print('  网站:     http://127.0.0.1:' + str(port))
     print('  小程序:   微信开发者工具导入 miniprogram 目录')
     print('            需勾选「不校验合法域名」，API 地址 http://127.0.0.1:' + str(port))
-    print('  演示账号: reception01 / dentist01 / dentist02 / finance01 / ops01 / hq01（密码 123456）')
+    print('  演示账号: F-1001 前台 / D-3012·D-3015 牙医 / C-4001 财务 / O-5001 运营 / H-6001 总部（密码 123456）')
     print('=' * 60)
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
