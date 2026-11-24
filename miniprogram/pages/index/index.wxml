@@ -29,6 +29,10 @@
 
   <view class="card">
     <view class="card-title">💡 就诊提示</view>
-    <view class="hint">· 预约成功后请按时到店，前台核对身份后安排就诊<br>· 如需改期或取消，可在「我的预约」中自助办理<br>· 过敏史请提前在「我的 → 我的档案」中登记，就诊时医生会逐项复核</view>
+    <view class="hint">
+      <view>· 预约成功后请按时到店，前台核对身份后安排就诊</view>
+      <view>· 如需改期或取消，可在「我的预约」中自助办理</view>
+      <view>· 过敏史请提前在「我的 → 我的档案」中登记，就诊时医生会逐项复核</view>
+    </view>
   </view>
 </view>
