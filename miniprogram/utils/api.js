@@ -1,7 +1,10 @@
 // ADC — 小程序 API 客户端
-// 调用链：① 云端后端（微信云托管公网 HTTPS 域名，体验版/正式版使用，需加入 request 合法域名）
-//        ② 本地后端 http://127.0.0.1:8000（开发者工具调试）
-//        ③ 内置离线演示引擎（utils/mock.js，无网络时兜底）
+// 调用链：① 微信云托管私有协议云调用（wx.cloud.callContainer，无需配置 request 合法域名，
+//           体验版/正式版均可；默认域名不能加白名单，因此云调用是正式环境的官方通道）
+//        ② 云端公网 HTTPS 域名（开发者工具调试用，默认域名仅测试可用）
+//        ③ 本地后端 http://127.0.0.1:8000（开发者工具调试）
+//        ④ 内置离线演示引擎（utils/mock.js，无网络时兜底）
+const CLOUD = { env: 'prod-d3gyx49ypd96d0cf0', service: 'adc' };
 const BASE = 'https://adc-353510-13-1540267336.sh.run.tcloudbase.com';
 const LOCAL = 'http://127.0.0.1:8000';
 const mock = require('./mock.js');
@@ -9,6 +12,7 @@ const mock = require('./mock.js');
 let token = wx.getStorageSync('adc_token') || '';
 let user = wx.getStorageSync('adc_user') || null;
 let offline = wx.getStorageSync('adc_offline') === 1;
+let cloudErrShown = false;
 
 function clearAuth() {
   token = ''; user = null;
@@ -18,6 +22,42 @@ function clearAuth() {
 
 function httpError(res) {
   return new Error((res.data && res.data.error) || ('请求失败 ' + res.statusCode));
+}
+
+/* ① 云调用（微信私有协议） */
+function cloudRequest(method, path, data) {
+  return new Promise((resolve, reject) => {
+    if (!wx.cloud || !wx.cloud.callContainer) { reject(new Error('当前环境不支持云调用')); return; }
+    wx.cloud.callContainer({
+      config: { env: CLOUD.env },
+      path: '/api' + path,
+      method,
+      data,
+      header: { 'X-WX-SERVICE': CLOUD.service, 'X-Token': token },
+      success(res) {
+        let d = res.data;
+        if (typeof d === 'string') { try { d = JSON.parse(d); } catch (e) { d = { error: '响应解析失败' }; } }
+        const status = res.statusCode || 200;
+        if (status >= 200 && status < 300) resolve(d);
+        else if (status === 401) {
+          clearAuth();
+          wx.reLaunch({ url: '/pages/login/login' });
+          const e = new Error('登录已失效，请重新登录');
+          e.noFallback = true;
+          reject(e);
+        } else reject(new Error((d && d.error) || ('服务返回 ' + status)));
+      },
+      fail(err) {
+        const msg = (err && err.errMsg) || JSON.stringify(err);
+        if (!cloudErrShown) {
+          cloudErrShown = true;
+          wx.showToast({ title: '云调用失败：' + msg.slice(0, 40), icon: 'none', duration: 4000 });
+        }
+        console.error('[ADC] 云调用失败:', msg);
+        reject(new Error('云调用失败'));
+      },
+    });
+  });
 }
 
 /* HTTP 请求（base 可选云端或本地） */
@@ -58,6 +98,7 @@ function mockRequest(method, path, data) {
 function request(method, path, data) {
   if (offline) return mockRequest(method, path, data);
   const seq = [
+    () => cloudRequest(method, path, data),
     () => httpRequest(BASE, method, path, data),
     () => httpRequest(LOCAL, method, path, data),
     () => mockRequest(method, path, data),
