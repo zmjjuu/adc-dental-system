@@ -30,8 +30,14 @@ function httpRequest(base, method, path, data) {
       header: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       success(res) {
         if (res.statusCode >= 200 && res.statusCode < 300) resolve(res.data);
-        else if (res.statusCode === 401) { clearAuth(); wx.reLaunch({ url: '/pages/login/login' }); reject(new Error('登录已失效')); }
-        else reject(httpError(res));
+        else if (res.statusCode === 401) {
+          // 服务器可达但登录失效：清登录态回登录页，不再回落到其他后端
+          clearAuth();
+          wx.reLaunch({ url: '/pages/login/login' });
+          const e = new Error('登录已失效，请重新登录');
+          e.noFallback = true;
+          reject(e);
+        } else reject(httpError(res));
       },
       fail() { reject(new Error(base + ' 不可达')); },
     });
@@ -61,7 +67,10 @@ function request(method, path, data) {
     seq[i]().then(res => {
       if (i === seq.length - 1) { offline = true; wx.setStorageSync('adc_offline', 1); }
       resolve(res);
-    }).catch(() => tryNext(i + 1).then(resolve, reject));
+    }).catch(err => {
+      if (err && err.noFallback) { reject(err); return; } // 401 等业务错误不回落到其他后端
+      tryNext(i + 1).then(resolve, reject);
+    });
   });
   return tryNext(0);
 }
@@ -85,7 +94,12 @@ module.exports = {
   isOffline: () => offline,
   setOffline(v) {
     offline = v;
-    if (v) wx.setStorageSync('adc_offline', 1); else wx.removeStorageSync('adc_offline');
+    if (v) { wx.setStorageSync('adc_offline', 1); }
+    else {
+      // 切回在线模式：清掉离线签发的假令牌，强制重新登录云端
+      wx.removeStorageSync('adc_offline');
+      if (token === 'offline-token') clearAuth();
+    }
   },
   resetDemo() { mock.reset(); },
 };
