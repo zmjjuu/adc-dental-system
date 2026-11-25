@@ -49,6 +49,7 @@ function cloudRequest(method, path, data) {
       },
       fail(err) {
         const msg = (err && err.errMsg) || JSON.stringify(err);
+        wx.setStorageSync('adc_cloud_err', msg); // 记录到「我的」页展示，便于真机排查
         if (!cloudErrShown) {
           cloudErrShown = true;
           wx.showToast({ title: '云调用失败：' + msg.slice(0, 40), icon: 'none', duration: 4000 });

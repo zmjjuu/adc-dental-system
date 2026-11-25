@@ -12,7 +12,8 @@ Page({
   onShow() {
     const u = api.getUser();
     if (!u) { wx.reLaunch({ url: '/pages/login/login' }); return; }
-    this.setData({ patient: u, offline: api.isOffline() });
+    this.setData({ patient: u, offline: api.isOffline(),
+      cloudErr: wx.getStorageSync('adc_cloud_err') || '' });
     this.load();
   },
   async load() {

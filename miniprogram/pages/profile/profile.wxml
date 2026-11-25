@@ -46,6 +46,7 @@
       <view>ADC 日常记录 · 个人服务记录查看工具</view>
       <view>本系统为课程设计演示，所有数据均为模拟数据</view>
       <view>模式：{{offline ? '离线演示模式（数据在手机本地）' : '在线模式（连接云端）'}}</view>
+      <view wx:if="{{cloudErr}}" style="color:#dc2626;margin-top:8rpx">云端连接失败原因：{{cloudErr}}</view>
       <view>咨询电话：0571-88001001</view>
     </view>
   </view>
