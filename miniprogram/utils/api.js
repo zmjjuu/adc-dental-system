@@ -11,8 +11,10 @@ const mock = require('./mock.js');
 
 let token = wx.getStorageSync('adc_ptoken') || '';
 let user = wx.getStorageSync('adc_puser') || null;
-let offline = wx.getStorageSync('adc_offline') === 1;
+let manualOffline = wx.getStorageSync('adc_offline') === 1; // 手动切换：持久保存
+let autoOffline = false; // 自动回退：仅本次会话有效，网络恢复自动回到在线
 let cloudErrShown = false;
+const offline = () => manualOffline || autoOffline;
 
 function clearAuth() {
   token = ''; user = null;
@@ -97,7 +99,7 @@ function mockRequest(method, path, data) {
 }
 
 function request(method, path, data) {
-  if (offline) return mockRequest(method, path, data);
+  if (offline()) return mockRequest(method, path, data);
   const seq = [
     () => cloudRequest(method, path, data),
     () => httpRequest(BASE, method, path, data),
@@ -107,7 +109,8 @@ function request(method, path, data) {
   const tryNext = i => new Promise((resolve, reject) => {
     if (i >= seq.length) { reject(new Error('无法连接服务器（云端与本地均不可达）')); return; }
     seq[i]().then(res => {
-      if (i === seq.length - 1) { offline = true; wx.setStorageSync('adc_offline', 1); }
+      if (i === seq.length - 1) { autoOffline = true; } // 仅本次会话
+      else { autoOffline = false; }                    // 在线后端恢复 → 自动回到在线
       resolve(res);
     }).catch(err => {
       if (err && err.noFallback) { reject(err); return; } // 401 等业务错误不回落到其他后端
@@ -132,13 +135,14 @@ module.exports = {
     wx.setStorageSync('adc_ptoken', t); wx.setStorageSync('adc_puser', u);
     getApp().globalData.user = u;
   },
-  isOffline: () => offline,
+  isOffline: () => manualOffline || autoOffline,
   setOffline(v) {
-    offline = v;
+    manualOffline = v;
     if (v) { wx.setStorageSync('adc_offline', 1); }
     else {
       // 切回在线模式：清掉离线签发的假令牌，强制重新登录云端
       wx.removeStorageSync('adc_offline');
+      autoOffline = false;
       if (token === 'offline-token') clearAuth();
     }
   },
