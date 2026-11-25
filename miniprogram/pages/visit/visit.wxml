@@ -1,22 +1,19 @@
 <view class="page" wx:if="{{v}}">
   <view class="card">
     <view class="kv">
-      <view class="kv-row"><view class="kv-k">就诊号</view><view class="kv-v mono">{{v.visit_no}}
-        <text class="badge {{v.st_cls}}">{{v.status}}</text></view></view>
-      <view class="kv-row"><view class="kv-k">诊所</view><view class="kv-v">{{v.clinic_code}} · {{v.clinic_address}}</view></view>
-      <view class="kv-row"><view class="kv-k">牙医</view><view class="kv-v">{{v.dentist_name}}医生</view></view>
-      <view class="kv-row"><view class="kv-k">预约时间</view><view class="kv-v">{{v.when}} ~ {{v.whenEnd}}</view></view>
-      <view class="kv-row" wx:if="{{v.arrived}}"><view class="kv-k">实际到诊</view><view class="kv-v">{{v.arrived}}</view></view>
-      <view class="kv-row" wx:if="{{v.requested_treatments}}"><view class="kv-k">就诊需求</view><view class="kv-v">{{v.requested_treatments}}</view></view>
-      <view class="kv-row" wx:if="{{v.special_needs}}"><view class="kv-k">特殊需求</view><view class="kv-v">{{v.special_needs}}</view></view>
-      <view class="kv-row" wx:if="{{v.cancelledAt}}"><view class="kv-k">取消时间</view><view class="kv-v">{{v.cancelledAt}}</view></view>
+      <view class="kv-row"><view class="kv-k">记录编号</view><view class="kv-v mono">{{v.visit_no}}
+        <text class="badge {{v.st_cls}}">{{v.statusText}}</text></view></view>
+      <view class="kv-row"><view class="kv-k">门店</view><view class="kv-v">{{v.clinic_code}} · {{v.clinic_address}}</view></view>
+      <view class="kv-row"><view class="kv-k">服务人员</view><view class="kv-v">{{v.dentist_name}}</view></view>
+      <view class="kv-row"><view class="kv-k">安排时间</view><view class="kv-v">{{v.when}} ~ {{v.whenEnd}}</view></view>
+      <view class="kv-row" wx:if="{{v.requested_treatments}}"><view class="kv-k">需求备注</view><view class="kv-v">{{v.requested_treatments}}</view></view>
       <view class="kv-row" wx:if="{{v.reason}}"><view class="kv-k">备注</view><view class="kv-v">{{v.reason}}</view></view>
-      <view class="kv-row" wx:if="{{v.previous_no}}"><view class="kv-k">改约记录</view><view class="kv-v">由 {{v.previous_no}} 改约而来</view></view>
+      <view class="kv-row" wx:if="{{v.previous_no}}"><view class="kv-k">改期记录</view><view class="kv-v">由 {{v.previous_no}} 改期而来</view></view>
     </view>
   </view>
 
   <view class="card" wx:if="{{v.treatments.length}}">
-    <view class="card-title">🩺 治疗明细</view>
+    <view class="card-title">💳 服务明细</view>
     <view class="tbl-wrap"><table class="tbl">
       <tr><th>项目</th><th>数量</th><th>单价</th><th>小计</th></tr>
       <tr wx:for="{{v.treatments}}" wx:key="treatment_id">
@@ -29,29 +26,11 @@
   </view>
 
   <view class="card" wx:if="{{v.invoice}}">
-    <view class="card-title">🧮 结算单</view>
+    <view class="card-title">🧾 消费账单</view>
     <view class="kv-row"><view class="kv-k">单号</view><view class="kv-v mono">{{v.invoice.invoice_no}}</view></view>
     <view class="total-line">合计 <b>{{invoiceTotal}}</b></view>
-    <button class="btn btn-ghost btn-block" style="margin-top:16rpx" bindtap="goInvoice">查看结算明细</button>
+    <button class="btn btn-ghost btn-block" style="margin-top:16rpx" bindtap="goInvoice">查看账单明细</button>
   </view>
-
-  <view style="height:130rpx"></view>
-</view>
-
-<view class="footer-fixed" wx:if="{{v}}">
-  <view class="btn-row" style="justify-content:flex-end">
-    <button class="btn btn-danger" wx:if="{{canCancel()}}" bindtap="openCancel">取消预约</button>
-    <button class="btn btn-ghost" wx:if="{{canResched()}}" bindtap="goResched">改约</button>
-    <button class="btn btn-primary" bindtap="load">刷新</button>
-  </view>
-</view>
-
-<view class="mask" wx:if="{{sheet === 'cancel'}}" bindtap="closeSheet"></view>
-<view class="sheet" wx:if="{{sheet === 'cancel'}}">
-  <view class="sheet-title">取消预约 <text bindtap="closeSheet" style="color:#94a3b8">✕</text></view>
-  <view class="label">取消原因（可选）</view>
-  <input class="input" value="{{reason}}" bindinput="onReason" placeholder="如：临时有事，改日再来" />
-  <button class="btn btn-danger btn-block" style="margin-top:24rpx" bindtap="doCancel">确认取消</button>
 </view>
 
 <view class="empty" wx:if="{{!v && !loading}}">加载失败</view>

@@ -11,7 +11,7 @@ Page({
   },
   async load() {
     try {
-      const [meta] = await Promise.all([api.get('/patient/meta')]);
+      const meta = await api.get('/patient/meta');
       this.setData({
         clinics: meta.clinics,
         treatments: meta.treatment_types.map(t => ({ ...t, price: fmt.money(t.default_unit_price) })),
@@ -19,6 +19,5 @@ Page({
       });
     } catch (e) { api.toastErr(e); }
   },
-  goBook() { wx.navigateTo({ url: '/pages/book/book' }); },
   goVisits() { wx.switchTab({ url: '/pages/visits/visits' }); },
 });

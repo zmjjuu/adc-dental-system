@@ -13,6 +13,7 @@ Page({
         v: {
           ...v,
           st_cls: fmt.badgeCls(v.status),
+          statusText: fmt.statusText(v.status),
           when: fmt.dt(v.scheduled_start),
           inv: inv ? {
             ...inv,

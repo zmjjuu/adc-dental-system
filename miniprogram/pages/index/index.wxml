@@ -2,13 +2,13 @@
   <view class="hero">
     <view class="hero-main">
       <view class="hero-title">你好，{{patient.name}} 👋</view>
-      <view class="hero-sub">安德鲁牙科 · 手机预约，到店即诊</view>
+      <view class="hero-sub">你的服务记录都在这里，随时查看</view>
     </view>
-    <view class="hero-btn" bindtap="goBook">立即预约</view>
+    <view class="hero-btn" bindtap="goVisits">我的记录</view>
   </view>
 
   <view class="card">
-    <view class="card-title">🏥 我们的诊所</view>
+    <view class="card-title">📍 服务门店</view>
     <view class="list-item" wx:for="{{clinics}}" wx:key="clinic_id">
       <view class="li-main">
         <view class="li-title">{{item.clinic_code}}</view>
@@ -18,21 +18,22 @@
   </view>
 
   <view class="card">
-    <view class="card-title">🩺 诊疗项目与价格</view>
+    <view class="card-title">💳 服务项目与价格（参考）</view>
     <view class="tt-grid">
-      <view class="tt-item" wx:for="{{treatments}}" wx:key="treatment_type_id" bindtap="goBook">
+      <view class="tt-item" wx:for="{{treatments}}" wx:key="treatment_type_id">
         <view class="tt-name">{{item.treatment_name}}</view>
         <view class="tt-price">{{item.price}}<text class="tt-unit">/{{item.unit_name}}</text></view>
       </view>
     </view>
+    <view class="hint" style="margin-top:14rpx">价格仅供参考，以门店出具的消费账单为准</view>
   </view>
 
   <view class="card">
-    <view class="card-title">💡 就诊提示</view>
+    <view class="card-title">💡 使用提示</view>
     <view class="hint">
-      <view>· 预约成功后请按时到店，前台核对身份后安排就诊</view>
-      <view>· 如需改期或取消，可在「我的预约」中自助办理</view>
-      <view>· 过敏史请提前在「我的 → 我的档案」中登记，就诊时医生会逐项复核</view>
+      <view>· 如需安排服务请致电门店或到店办理</view>
+      <view>· 每次服务的明细与账单可在「我的记录」中查看</view>
+      <view>· 健康备注可在「我的」中登记，到店时服务人员会逐项核对</view>
     </view>
   </view>
 </view>

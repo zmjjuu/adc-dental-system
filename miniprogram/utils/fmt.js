@@ -12,4 +12,11 @@ const BADGE_CLS = {
 };
 function badgeCls(status) { return BADGE_CLS[status] || 'b-gray'; }
 
-module.exports = { money, dt, d, badgeCls };
+// 患者端记录展示文案（去除医疗用语）
+const STATUS_TEXT = {
+  待到诊: '待进行', 已到诊: '已进行', 治疗完成: '已完成', 患者取消: '已取消',
+  诊所撤销: '门店取消', 待核实: '待确认', 未到诊: '未到店', 已改约: '已改期',
+};
+function statusText(status) { return STATUS_TEXT[status] || status; }
+
+module.exports = { money, dt, d, badgeCls, statusText };

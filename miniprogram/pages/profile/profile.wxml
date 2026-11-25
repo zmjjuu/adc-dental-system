@@ -22,28 +22,29 @@
   </view>
 
   <view class="card">
-    <view class="card-title">🧾 我的过敏记录</view>
+    <view class="card-title">📝 我的健康备注</view>
     <block wx:if="{{patient.allergies.length}}">
       <view class="allergy-item" wx:for="{{patient.allergies}}" wx:key="patient_allergy_id">
         <view style="min-width:120rpx;font-weight:600">{{item.allergy_name}}</view>
-        <view class="badge {{item.st_cls}}">{{item.status}}</view>
+        <view class="badge {{item.st_cls}}">{{item.st_text}}</view>
         <view class="muted" style="flex:1">{{item.note || ''}}</view>
       </view>
     </block>
-    <view wx:else class="hint">暂无过敏记录。</view>
-    <view class="section">＋ 登记过敏（医生就诊时会逐项复核）</view>
+    <view wx:else class="hint">暂无备注。</view>
+    <view class="section">＋ 添加备注（到店时服务人员会逐项核对）</view>
     <picker mode="selector" range="{{allergyTypes}}" range-key="allergy_name" value="{{newAllergyIdx}}" bindchange="onNewAllergy">
       <view class="picker">{{allergyTypes[newAllergyIdx].allergy_name}}</view>
     </picker>
-    <view class="label">备注</view>
-    <input class="input" value="{{newAllergyNote}}" bindinput="onNewNote" placeholder="如：接触乳胶手套后皮肤发红" />
-    <button class="btn btn-ghost btn-block" style="margin-top:16rpx" bindtap="addAllergy">登记过敏</button>
+    <view class="label">说明</view>
+    <input class="input" value="{{newAllergyNote}}" bindinput="onNewNote" placeholder="如：接触乳胶制品后皮肤发红" />
+    <button class="btn btn-ghost btn-block" style="margin-top:16rpx" bindtap="addAllergy">添加备注</button>
   </view>
 
   <view class="card">
     <view class="card-title">ℹ️ 关于</view>
     <view class="hint">
-      <view>ADC 日常记录 · 安德鲁牙科患者服务</view>
+      <view>ADC 日常记录 · 个人服务记录查看工具</view>
+      <view>本系统为课程设计演示，所有数据均为模拟数据</view>
       <view>模式：{{offline ? '离线演示模式（数据在手机本地）' : '在线模式（连接云端）'}}</view>
       <view>咨询电话：0571-88001001</view>
     </view>

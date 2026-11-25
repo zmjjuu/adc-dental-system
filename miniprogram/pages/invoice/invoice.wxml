@@ -1,12 +1,12 @@
 <view class="page" wx:if="{{v}}">
   <view class="card" wx:if="{{v.inv}}">
-    <view class="card-title">🧮 就诊结算单 <text class="mono muted">{{v.inv.invoice_no}}</text></view>
+    <view class="card-title">🧾 消费账单 <text class="mono muted">{{v.inv.invoice_no}}</text></view>
     <view class="kv">
-      <view class="kv-row"><view class="kv-k">就诊号</view><view class="kv-v mono">{{v.visit_no}}（{{v.status}}）</view></view>
-      <view class="kv-row"><view class="kv-k">患者</view><view class="kv-v">{{v.patient_name}}（{{v.patient_account}}）</view></view>
-      <view class="kv-row"><view class="kv-k">诊所 / 医生</view><view class="kv-v">{{v.clinic_code}} · {{v.dentist_name}}医生</view></view>
-      <view class="kv-row"><view class="kv-k">就诊时间</view><view class="kv-v">{{v.when}}</view></view>
-      <view class="kv-row"><view class="kv-k">签发时间</view><view class="kv-v">{{v.inv.issued}} · 版本 v{{v.inv.revision_no}}</view></view>
+      <view class="kv-row"><view class="kv-k">记录编号</view><view class="kv-v mono">{{v.visit_no}}（{{v.statusText}}）</view></view>
+      <view class="kv-row"><view class="kv-k">客户</view><view class="kv-v">{{v.patient_name}}（{{v.patient_account}}）</view></view>
+      <view class="kv-row"><view class="kv-k">门店 / 服务人员</view><view class="kv-v">{{v.clinic_code}} · {{v.dentist_name}}</view></view>
+      <view class="kv-row"><view class="kv-k">服务时间</view><view class="kv-v">{{v.when}}</view></view>
+      <view class="kv-row"><view class="kv-k">出单时间</view><view class="kv-v">{{v.inv.issued}} · 版本 v{{v.inv.revision_no}}</view></view>
     </view>
     <view class="tbl-wrap" style="margin-top:16rpx"><table class="tbl">
       <tr><th>项目</th><th>数量</th><th>单价</th><th>小计</th></tr>
@@ -18,11 +18,11 @@
       </tr>
     </table></view>
     <view class="total-line">合计 <b>{{v.inv.total}}</b></view>
-    <view class="hint" style="margin-top:10rpx">明细由医生签署确认的治疗记录生成，可逐行追溯；本单为就诊结算单，如需发票请到前台办理。</view>
+    <view class="hint" style="margin-top:10rpx">账单明细由门店服务记录生成，可逐行核对；如需正式票据请到门店办理。</view>
   </view>
 
   <view class="card" wx:else>
-    <view class="card-title">🧮 结算单</view>
-    <view class="hint">本次就诊尚未开单。治疗完成后由诊所出具，稍后可在本页面查看。</view>
+    <view class="card-title">🧾 消费账单</view>
+    <view class="hint">本次服务尚未出单，完成后可在本页面查看。</view>
   </view>
 </view>

@@ -2,9 +2,9 @@
   <view class="login-card">
     <view class="login-logo">🦷</view>
     <view class="login-title">ADC 日常记录</view>
-    <view class="login-sub">安德鲁牙科 Andrew's Dental Chain · 患者服务</view>
+    <view class="login-sub">个人服务记录 · 随时查看</view>
 
-    <view class="label">账号（患者账号或手机号）</view>
+    <view class="label">账号（账号或手机号）</view>
     <input class="input" value="{{loginName}}" bindinput="onName" placeholder="如 P-1001 或手机号" />
 
     <view class="label">密码</view>
@@ -13,12 +13,12 @@
     <button class="btn btn-primary btn-block login-btn" loading="{{loading}}" bindtap="onLogin">登 录</button>
 
     <view class="demo-box">
-      <view class="demo-title">演示患者账号（密码均为 123456）</view>
-      <view class="demo-line">P-1001 陈雨桐 · 乳胶/树脂过敏（换店预约演示）</view>
-      <view class="demo-line">P-1002 刘明轩 · 新患者初诊评估</view>
-      <view class="demo-line">P-1003~P-1006 · 其余演示患者</view>
+      <view class="demo-title">演示账号（密码均为 123456）</view>
+      <view class="demo-line">P-1001 陈雨桐 · 含健康备注与跨店记录演示</view>
+      <view class="demo-line">P-1002 刘明轩 · 新客户服务记录演示</view>
+      <view class="demo-line">P-1003~P-1006 · 其余演示账号</view>
     </view>
-    <view class="login-tip">本系统为课程设计演示系统，诊所与患者信息均为模拟数据，不提供诊疗建议、不涉及线上支付</view>
+    <view class="login-tip">本系统为课程设计演示，仅提供个人服务记录查看功能，不提供任何线上办理服务，所有数据均为模拟数据，不涉及线上支付</view>
     <view class="login-tip" style="margin-top:8rpx">连接不上服务器时自动切换「离线演示模式」，数据在手机本地</view>
   </view>
 </view>

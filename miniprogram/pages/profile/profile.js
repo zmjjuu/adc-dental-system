@@ -19,7 +19,7 @@ Page({
     try {
       const [me, meta] = await Promise.all([api.get('/patient/me'), api.get('/patient/meta')]);
       this.setData({
-        patient: { ...me, allergies: me.allergies.map(a => ({ ...a, st_cls: fmt.badgeCls(a.status) })) },
+        patient: { ...me, allergies: me.allergies.map(a => ({ ...a, st_cls: fmt.badgeCls(a.status), st_text: fmt.statusText(a.status) })) },
         allergyTypes: meta.allergy_types,
         f: { phone: me.phone || '', email: me.email || '', billing_address: me.billing_address || '',
           emergency_contact_name: me.emergency_contact_name || '', emergency_contact_phone: me.emergency_contact_phone || '' },
@@ -45,7 +45,7 @@ Page({
         allergy_type_id: this.data.allergyTypes[this.data.newAllergyIdx].allergy_type_id,
         note: this.data.newAllergyNote,
       });
-      api.toast('已登记过敏（待医生核实）');
+      api.toast('已添加健康备注（到店时服务人员会核对）');
       this.setData({ newAllergyNote: '' });
       this.load();
     } catch (e) { api.toastErr(e); }

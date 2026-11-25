@@ -1,8 +1,8 @@
 const api = require('../../utils/api.js');
 const fmt = require('../../utils/fmt.js');
 
-const TABS = [['', '全部'], ['待到诊', '待到诊'], ['已到诊', '已到诊'], ['治疗完成', '已完成'],
-  ['患者取消', '已取消'], ['未到诊', '未到诊'], ['待核实', '待核实'], ['已改约', '已改约']];
+const TABS = [['', '全部'], ['待到诊', '待进行'], ['已到诊', '已进行'], ['治疗完成', '已完成'],
+  ['患者取消', '已取消'], ['未到诊', '未到店'], ['待核实', '待确认'], ['已改约', '已改期']];
 
 Page({
   data: { tabs: TABS, tab: '待到诊', list: [], loaded: false },
@@ -17,12 +17,11 @@ Page({
       const filtered = this.data.tab ? list.filter(v => v.status === this.data.tab) : list;
       this.setData({
         list: filtered.map(v => ({ ...v, st_cls: fmt.badgeCls(v.status),
-          when: fmt.dt(v.scheduled_start) })),
+          statusText: fmt.statusText(v.status), when: fmt.dt(v.scheduled_start) })),
         loaded: true,
       });
     } catch (e) { api.toastErr(e); }
   },
   onTab(e) { this.setData({ tab: e.currentTarget.dataset.v }); this.load(); },
   goVisit(e) { wx.navigateTo({ url: '/pages/visit/visit?id=' + e.currentTarget.dataset.id }); },
-  goBook() { wx.navigateTo({ url: '/pages/book/book' }); },
 });

@@ -8,13 +8,12 @@
     <block wx:if="{{list.length}}">
       <view class="list-item" wx:for="{{list}}" wx:key="visit_id" bindtap="goVisit" data-id="{{item.visit_id}}">
         <view class="li-main">
-          <view class="li-title">{{item.clinic_code}} · {{item.dentist_name}}医生</view>
+          <view class="li-title">{{item.clinic_code}} · {{item.dentist_name}}</view>
           <view class="li-sub mono">{{item.visit_no}} · {{item.when}}<block wx:if="{{item.requested_treatments}}"> · {{item.requested_treatments}}</block></view>
         </view>
-        <view class="badge {{item.st_cls}}">{{item.status}}</view>
+        <view class="badge {{item.st_cls}}">{{item.statusText}}</view>
       </view>
     </block>
-    <view wx:else class="empty">{{loaded ? '该状态下没有预约，去预约一个吧' : '加载中…'}}</view>
-    <button wx:if="{{loaded && !list.length}}" class="btn btn-primary btn-block" style="margin-top:20rpx" bindtap="goBook">＋ 预约挂号</button>
+    <view wx:else class="empty">{{loaded ? '暂无记录' : '加载中…'}}</view>
   </view>
 </view>
