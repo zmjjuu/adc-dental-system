@@ -43,7 +43,7 @@
   <view class="card">
     <view class="card-title">ℹ️ 关于</view>
     <view class="hint">
-      <view>安德鲁牙科连锁 · 患者服务端小程序</view>
+      <view>ADC 日常记录 · 安德鲁牙科患者服务</view>
       <view>模式：{{offline ? '离线演示模式（数据在手机本地）' : '在线模式（连接云端）'}}</view>
       <view>咨询电话：0571-88001001</view>
     </view>

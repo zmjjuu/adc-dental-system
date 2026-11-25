@@ -1,8 +1,8 @@
 <view class="login-wrap">
   <view class="login-card">
     <view class="login-logo">🦷</view>
-    <view class="login-title">安德鲁牙科</view>
-    <view class="login-sub">Andrew's Dental Chain · 患者服务</view>
+    <view class="login-title">ADC 日常记录</view>
+    <view class="login-sub">安德鲁牙科 Andrew's Dental Chain · 患者服务</view>
 
     <view class="label">账号（患者账号或手机号）</view>
     <input class="input" value="{{loginName}}" bindinput="onName" placeholder="如 P-1001 或手机号" />
