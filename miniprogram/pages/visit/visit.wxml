@@ -31,6 +31,24 @@
     <view class="total-line">合计 <b>{{invoiceTotal}}</b></view>
     <button class="btn btn-ghost btn-block" style="margin-top:16rpx" bindtap="goInvoice">查看账单明细</button>
   </view>
+
+  <view style="height:130rpx"></view>
+</view>
+
+<view class="footer-fixed" wx:if="{{v}}">
+  <view class="btn-row" style="justify-content:flex-end">
+    <button class="btn btn-danger" wx:if="{{canCancel()}}" bindtap="openCancel">取消安排</button>
+    <button class="btn btn-ghost" wx:if="{{canResched()}}" bindtap="goResched">改期</button>
+    <button class="btn btn-primary" bindtap="load">刷新</button>
+  </view>
+</view>
+
+<view class="mask" wx:if="{{sheet === 'cancel'}}" bindtap="closeSheet"></view>
+<view class="sheet" wx:if="{{sheet === 'cancel'}}">
+  <view class="sheet-title">取消安排 <text bindtap="closeSheet" style="color:#94a3b8">✕</text></view>
+  <view class="label">取消原因（可选）</view>
+  <input class="input" value="{{reason}}" bindinput="onReason" placeholder="如：临时有事，改日再来" />
+  <button class="btn btn-danger btn-block" style="margin-top:24rpx" bindtap="doCancel">确认取消</button>
 </view>
 
 <view class="empty" wx:if="{{!v && !loading}}">加载失败</view>

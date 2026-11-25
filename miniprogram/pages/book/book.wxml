@@ -1,0 +1,55 @@
+<view class="page">
+  <view class="card">
+    <view class="card-title">① 选择门店与时间</view>
+    <view class="label">门店</view>
+    <picker mode="selector" range="{{clinics}}" value="{{clinicIdx}}" bindchange="onClinic">
+      <view class="picker">{{clinics[clinicIdx]}}</view>
+    </picker>
+    <view class="label">日期</view>
+    <picker mode="date" start="{{today}}" value="{{date}}" bindchange="onDate">
+      <view class="picker">{{date}}</view>
+    </picker>
+  </view>
+
+  <view class="card">
+    <view class="card-title">② 预约信息</view>
+    <view class="label">服务项目（按专业资质匹配服务人员，可不选）</view>
+    <picker mode="selector" range="{{tts}}" value="{{ttIdx}}" bindchange="onTt">
+      <view class="picker">{{tts[ttIdx]}}</view>
+    </picker>
+    <view class="label">需求描述（预约阶段只记录，不收费）</view>
+    <input class="input" value="{{want}}" bindinput="onWant" placeholder="如：洁牙护理" />
+    <view class="label">特殊情况说明（可选）</view>
+    <textarea class="input" value="{{needs}}" bindinput="onNeeds" placeholder="如：希望安排经验丰富的服务人员" />
+  </view>
+
+  <view class="card">
+    <view class="card-title">③ 选择时段</view>
+    <button class="btn btn-primary btn-block" bindtap="loadSlots">查询可约时段</button>
+    <block wx:if="{{slotGroups.length}}">
+      <view class="slot-group" wx:for="{{slotGroups}}" wx:key="name" wx:for-index="g">
+        <view class="slot-name">{{item.name}}</view>
+        <view class="slot-btns">
+          <view class="slot-btn {{it.sel ? 'sel' : ''}}" wx:for="{{item.items}}" wx:for-item="it" wx:for-index="i"
+            wx:key="start" data-g="{{g}}" data-i="{{i}}" bindtap="pickSlot">{{it.label}}</view>
+        </view>
+      </view>
+      <view class="hint" wx:if="{{slot}}" style="margin-top:14rpx">已选：{{slot.dentist_name}} {{slot.start}} ~ {{slot.end}}</view>
+    </block>
+    <view wx:else class="hint" style="margin-top:14rpx">选好门店和日期后点「查询可约时段」</view>
+  </view>
+
+  <view class="card" wx:if="{{mode === 'reschedule'}}">
+    <view class="card-title">改期原因（可选）</view>
+    <input class="input" value="{{reason}}" bindinput="onReason" placeholder="如：时间不合适，想改晚一点" />
+    <view class="hint" style="margin-top:10rpx">改期成功后原安排标记「已改期」，新安排指回原安排</view>
+  </view>
+
+  <view style="height:140rpx"></view>
+</view>
+
+<view class="footer-fixed">
+  <button class="btn btn-primary btn-block" loading="{{submitting}}" bindtap="submit">
+    {{mode === 'book' ? '确认预约' : '确认改期'}}
+  </button>
+</view>

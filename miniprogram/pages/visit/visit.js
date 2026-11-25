@@ -2,7 +2,7 @@ const api = require('../../utils/api.js');
 const fmt = require('../../utils/fmt.js');
 
 Page({
-  data: { id: null, v: null, loading: true },
+  data: { id: null, v: null, sheet: null, reason: '', loading: true },
   onLoad(q) { this.setData({ id: Number(q.id) }); },
   onShow() { this.load(); },
   async load() {
@@ -23,6 +23,20 @@ Page({
         loading: false,
       });
     } catch (e) { api.toastErr(e); this.setData({ loading: false }); }
+  },
+  canCancel() { const v = this.data.v; return v && ['待到诊', '待核实'].includes(v.status); },
+  canResched() { const v = this.data.v; return v && ['待到诊', '待核实'].includes(v.status); },
+  openCancel() { this.setData({ sheet: 'cancel', reason: '' }); },
+  onReason(e) { this.setData({ reason: e.detail.value }); },
+  closeSheet() { this.setData({ sheet: null }); },
+  async doCancel() {
+    try {
+      await api.post(`/patient/visits/${this.data.id}/cancel`, { reason: this.data.reason || '客户主动取消' });
+      api.toast('已取消安排'); this.setData({ sheet: null }); this.load();
+    } catch (e) { api.toastErr(e); }
+  },
+  goResched() {
+    wx.navigateTo({ url: `/pages/book/book?mode=reschedule&visit_id=${this.data.id}` });
   },
   goInvoice() { wx.navigateTo({ url: `/pages/invoice/invoice?visit_id=${this.data.id}` }); },
 });

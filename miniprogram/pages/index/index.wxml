@@ -4,7 +4,7 @@
       <view class="hero-title">你好，{{patient.name}} 👋</view>
       <view class="hero-sub">你的服务记录都在这里，随时查看</view>
     </view>
-    <view class="hero-btn" bindtap="goVisits">我的记录</view>
+    <view class="hero-btn" bindtap="goBook">预约安排</view>
   </view>
 
   <view class="card">
@@ -31,7 +31,7 @@
   <view class="card">
     <view class="card-title">💡 使用提示</view>
     <view class="hint">
-      <view>· 如需安排服务请致电门店或到店办理</view>
+      <view>· 也可在「预约安排」中在线选择门店、服务项目与时段</view>
       <view>· 每次服务的明细与账单可在「我的记录」中查看</view>
       <view>· 健康备注可在「我的」中登记，到店时服务人员会逐项核对</view>
     </view>

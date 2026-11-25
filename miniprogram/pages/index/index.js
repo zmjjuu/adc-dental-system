@@ -20,4 +20,5 @@ Page({
     } catch (e) { api.toastErr(e); }
   },
   goVisits() { wx.switchTab({ url: '/pages/visits/visits' }); },
+  goBook() { wx.navigateTo({ url: '/pages/book/book' }); },
 });

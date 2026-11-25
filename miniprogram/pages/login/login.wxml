@@ -18,7 +18,7 @@
       <view class="demo-line">P-1002 刘明轩 · 新客户服务记录演示</view>
       <view class="demo-line">P-1003~P-1006 · 其余演示账号</view>
     </view>
-    <view class="login-tip">本系统为课程设计演示，仅提供个人服务记录查看功能，不提供任何线上办理服务，所有数据均为模拟数据，不涉及线上支付</view>
+    <view class="login-tip">本系统为课程设计演示，提供日程预约与个人服务记录管理，不提供挂号、问诊等医疗服务，所有数据均为模拟数据，不涉及线上支付</view>
     <view class="login-tip" style="margin-top:8rpx">连接不上服务器时自动切换「离线演示模式」，数据在手机本地</view>
   </view>
 </view>
